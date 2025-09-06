@@ -1,0 +1,42 @@
+# بيئة Python الافتراضية
+venv/
+.env
+.venv/
+env/
+ENV/
+
+# ملفات Byte-compiled
+__pycache__/
+*.py[cod]
+*$py.class
+
+# قاعدة بيانات SQLite (إذا كنت تستخدمها)
+db.sqlite3
+db.sqlite3-journal
+
+# مجلدات Django المؤقتة
+*.log
+local_settings.py
+media/
+staticfiles/
+
+# ملفات التغطية والاختبار
+.coverage
+.coverage.*
+.tox/
+.pytest_cache/
+.hypothesis/
+
+# PyCharm و VS Code
+.idea/
+.vscode/
+
+# Cython debug
+cython_debug/
+
+# Ruff و mypy
+.ruff_cache/
+.mypy_cache/
+.dmypy.json
+.pyre/
+.pytype/
