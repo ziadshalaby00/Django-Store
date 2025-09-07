@@ -37,7 +37,7 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
 
     def __str__(self):
-        return self.name
+        return self.name[:50]
 
     @property
     def price_before_discount(self):
