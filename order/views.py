@@ -13,6 +13,7 @@ from django.db import transaction
 
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
+from django.conf import settings
 
 class CreateOrderAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -30,9 +31,15 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        unpaid_orders_count = Order.objects.filter(user=request.user, is_paid=False).count()
+        if unpaid_orders_count >= settings.MAX_UNPAID_ORDERS_PER_USER:
+            return Response({
+                "detail": f"You have reached the maximum of {settings.MAX_UNPAID_ORDERS_PER_USER} unpaid orders."
+            }, status=status.HTTP_400_BAD_REQUEST)
+
         # جلب الكارت ومحتوياته
         cart = get_object_or_404(Cart, user=user)
-        cart_items = cart.items.all()
+        cart_items = cart.items.select_related('product').all()
         if not cart_items.exists():
             return Response({"detail": "Cart is empty."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -48,6 +55,12 @@ class CreateOrderAPIView(APIView):
                 order_items = []
                 for item in cart_items:
                     product = item.product
+                    
+                    if item.quantity > settings.MAX_QUANTITY_PER_ITEM:
+                        raise ValidationError(
+                            f"The maximum quantity per product is {settings.MAX_QUANTITY_PER_ITEM}."
+                        )
+        
                     if product.stock < item.quantity:
                         # لو الكمية مش كافية، ارفع Exception عشان rollback يحصل
                         raise ValidationError(

@@ -224,3 +224,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 CELERY_BROKER_URL = "redis://localhost:6379/0"  # مثال لو تستخدم Redis
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+
+
+MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفوعة لكل مستخدم
+MAX_QUANTITY_PER_ITEM = 20 # أقصى كمية لكل منتج في أي order
