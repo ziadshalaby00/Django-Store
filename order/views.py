@@ -102,3 +102,18 @@ class UserOrdersAPIView(APIView):
         orders = Order.objects.filter(user=user).order_by('-created_at')
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+
+
+class PaymentMethodsAPIView(APIView):
+    permission_classes = [permissions.AllowAny]  # لو عايز أي حد يشوفها
+
+    def get(self, request):
+        # إرجاع قائمة الـ choices
+        methods = getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
+            ("cod", "Cash on Delivery"),
+            ("card", "EasyCash / Online Card"),
+        ])
+        return Response([
+            {"value": key, "display": label} for key, label in methods
+        ], status=status.HTTP_200_OK)

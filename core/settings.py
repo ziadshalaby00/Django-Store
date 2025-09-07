@@ -228,3 +228,10 @@ CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 
 MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفوعة لكل مستخدم
 MAX_QUANTITY_PER_ITEM = 20 # أقصى كمية لكل منتج في أي order
+
+
+# خيارات الدفع الممكنة في الموقع
+AVAILABLE_PAYMENT_METHODS = [
+    ("cod", "Cash on Delivery"),
+    ("card", "EasyCash / Online Card"),
+]

@@ -6,6 +6,7 @@ from django.dispatch import receiver
 from django.contrib.auth import get_user_model
 from product.models import Product
 from address.models import Address
+from django.conf import settings
 
 User = get_user_model()
 
@@ -17,13 +18,15 @@ class Order(models.Model):
         ("paid", "Paid"),
     ]
 
-    PAYMENT_METHODS = [
-        ("cod", "Cash on Delivery"),
-        ("card", "EasyCash / Online Card"),
-    ]
-
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="orders")
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default="card")
+    payment_method = models.CharField(
+        max_length=20,
+        choices=getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
+            ("cod", "Cash on Delivery"),
+            ("card", "EasyCash / Online Card"),
+        ]),
+        default="card"
+    )
     
     payment_status = models.CharField(max_length=20, choices=PAID_STATUS, default="unpaid")
     is_paid = models.BooleanField(default=False)
