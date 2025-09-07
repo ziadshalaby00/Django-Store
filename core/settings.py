@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     "cart",
     "order",
     "address",
+    'django_celery_beat',
+    'django_celery_results'
 ]
 
 MIDDLEWARE = [
@@ -219,3 +221,6 @@ import os
 # المسار الأساسي للميديا داخل المشروع
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+CELERY_BROKER_URL = "redis://localhost:6379/0"  # مثال لو تستخدم Redis
+CELERY_RESULT_BACKEND = "redis://localhost:6379/0"

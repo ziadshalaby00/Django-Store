@@ -33,6 +33,13 @@ class AddToCartView(generics.CreateAPIView):
 
         product = get_object_or_404(Product, id=product_id)
 
+        # تحقق من المخزون
+        if quantity > product.stock:
+            return Response(
+                {"detail": f"Only {product.stock} items available in stock."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         cart_item, created = CartItem.objects.get_or_create(
             cart=cart, product=product, defaults={"quantity": quantity}
         )
@@ -63,6 +70,13 @@ class UpdateCartItemView(generics.UpdateAPIView):
         if quantity < 1:
             cart_item.delete()
             return Response({"detail": "Item removed"}, status=204)
+        
+        # تحقق من المخزون
+        if quantity > cart_item.product.stock:
+            return Response(
+                {"detail": f"Only {cart_item.product.stock} items available in stock."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         cart_item.quantity = quantity
         cart_item.save()

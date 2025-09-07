@@ -7,7 +7,7 @@ User = get_user_model()
 
 
 class Address(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="address")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="addresses")
     full_name = models.CharField(max_length=100)  # اسم صاحب العنوان
     phone = models.CharField(max_length=20)
 

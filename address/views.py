@@ -6,52 +6,51 @@ from rest_framework import permissions, status, serializers
 from rest_framework.response import Response
 from .models import Address
 from .serializers import AddressSerializer
+from django.db.models import ProtectedError
 
 class UserAddressAPIView(APIView):
-    """
-    CRUD كامل على عنوان المستخدم بدون الحاجة لإرسال أي ID
-    """
     permission_classes = [permissions.IsAuthenticated]
 
-    def get_object(self):
-        user = self.request.user
-        try:
-            return user.address
-        except Address.DoesNotExist:
-            return None
-
     def get(self, request):
-        # GET /address/ -> عرض العنوان
-        obj = self.get_object()
-        if not obj:
-            return Response({"detail": "Address not set."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = AddressSerializer(obj)
-        return Response(serializer.data)
+            # لو مفيش ID -> جلب كل العناوين
+            addresses = Address.objects.filter(user=request.user)
+            serializer = AddressSerializer(addresses, many=True)
+            return Response(serializer.data)
 
     def post(self, request):
-        # POST /address/ -> إنشاء عنوان جديد
-        user = request.user
-        if hasattr(user, "address"):
-            raise serializers.ValidationError("Address already exists.")
         serializer = AddressSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=user)
+        serializer.save(user=request.user)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
-    def patch(self, request):
-        # PATCH /address/ -> تعديل بعض الحقول فقط
-        obj = self.get_object()
-        if not obj:
+
+    def patch(self, request, address_id):
+        try:
+            address = Address.objects.get(id=address_id, user=request.user)
+        except Address.DoesNotExist:
             return Response({"detail": "Address not found."}, status=status.HTTP_404_NOT_FOUND)
-        serializer = AddressSerializer(obj, data=request.data, partial=True)
+        
+        if address.shipping_orders.exists():  # shipping_orders هي related_name في موديل Order
+            return Response(
+                {"detail": "Cannot edit this address because it is linked to existing orders."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        serializer = AddressSerializer(address, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(serializer.data)
 
-    def delete(self, request):
-        # DELETE /address/ -> حذف العنوان
-        obj = self.get_object()
-        if not obj:
+    def delete(self, request, address_id):
+        try:
+            address = Address.objects.get(id=address_id, user=request.user)
+        except Address.DoesNotExist:
             return Response({"detail": "Address not found."}, status=status.HTTP_404_NOT_FOUND)
-        obj.delete()
-        return Response({"detail": "Address deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+
+        try:
+            address.delete()
+            return Response({"detail": "Address deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except ProtectedError:
+            return Response(
+                {"detail": "Cannot delete this address because it is linked to existing orders."},
+                status=status.HTTP_400_BAD_REQUEST
+            )

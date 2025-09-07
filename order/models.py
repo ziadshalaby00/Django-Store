@@ -1,4 +1,6 @@
 from django.db import models
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
 
 # Create your models here.
 from django.contrib.auth import get_user_model
@@ -20,7 +22,7 @@ class Order(models.Model):
         ("card", "EasyCash / Online Card"),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="orders")
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, default="card")
     
     payment_status = models.CharField(max_length=20, choices=PAID_STATUS, default="unpaid")
@@ -28,7 +30,7 @@ class Order(models.Model):
     paid_at = models.DateTimeField(blank=True, null=True)  # تاريخ الدفع لو اتدفع
 
     shipping_address = models.ForeignKey(
-        Address, on_delete=models.SET_NULL, null=True, related_name="shipping_orders"
+        Address, on_delete=models.PROTECT, related_name="shipping_orders"
     )
 
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -38,7 +40,8 @@ class Order(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Order #{self.id} - {self.user.username} - {self.payment_status}"
+        username = self.user.username if self.user else "Deleted user"
+        return f"Order #{self.id} - {username} - {self.payment_status}"
 
     def calculate_total(self):
         total = sum(item.subtotal for item in self.items.all())
@@ -59,3 +62,14 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return self.price_at_purchase * self.quantity
+
+
+@receiver(post_delete, sender=OrderItem)
+def restore_product_stock(sender, instance, **kwargs):
+    product = instance.product
+    order = instance.order
+
+    # تحقق إن المنتج موجود والأوردر مش مدفوع
+    if product and not order.is_paid:
+        product.stock += instance.quantity
+        product.save()
