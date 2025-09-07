@@ -11,7 +11,7 @@ from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 
 from .models import Category, Brand
-from .serializers import CategorySerializer, BrandSerializer
+from .serializers import CategorySerializer, BrandSerializer, ProductDetailSerializer
 
 class ProductListView(APIView):
     """
@@ -72,7 +72,7 @@ class ProductListView(APIView):
 class ProductDetailView(APIView):
     def get(self, request, product_id):
         product = get_object_or_404(Product, id=product_id, is_active=True)
-        serializer = ProductSerializer(product)
+        serializer = ProductDetailSerializer(product)
         return Response(serializer.data)
 
 class CategoryListView(APIView):

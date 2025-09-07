@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'auth_app',
     "social_django",
     "product",
+    "reviews",
 ]
 
 MIDDLEWARE = [

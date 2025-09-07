@@ -1,9 +1,11 @@
 from rest_framework import serializers
 from .models import Product
+from reviews.serializers import ReviewSerializer
 
 class ProductSerializer(serializers.ModelSerializer):
     price_before_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     price_after_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
+    average_rating = serializers.SerializerMethodField()
     
     class Meta:
         model = Product
@@ -19,10 +21,24 @@ class ProductSerializer(serializers.ModelSerializer):
             'brand',
             'category',
             'is_active',
+            "average_rating",
             'created_at',
             'updated_at',
         ]
         read_only_fields = fields
+    
+    def get_average_rating(self, obj):
+        reviews = obj.reviews.all()
+        if reviews.exists():
+            return round(sum([r.rating for r in reviews]) / reviews.count(), 1)
+        return 0
+
+class ProductDetailSerializer(ProductSerializer):
+    reviews = ReviewSerializer(many=True, read_only=True)
+
+    class Meta(ProductSerializer.Meta):
+        fields = ProductSerializer.Meta.fields + ['reviews']
+
 
 from rest_framework import serializers
 from .models import Category, Brand
