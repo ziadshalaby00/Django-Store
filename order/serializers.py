@@ -4,10 +4,11 @@ from address.serializers import AddressSerializer  # لو عندك Serializer ل
 
 class OrderItemSerializer(serializers.ModelSerializer):
     subtotal = serializers.SerializerMethodField()
-
+    product_name = serializers.CharField(source="product.name", read_only=True)
+    
     class Meta:
         model = OrderItem
-        fields = ("id", "product", "quantity", "price_at_purchase", "subtotal")
+        fields = ("id", "product", "product_name", "quantity", "price_at_purchase", "subtotal")
 
     def get_subtotal(self, obj):
         # subtotal مع العملة

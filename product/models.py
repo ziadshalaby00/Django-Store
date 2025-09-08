@@ -40,11 +40,6 @@ class Product(models.Model):
         return self.name[:50]
 
     @property
-    def price_before_discount(self):
-        """السعر الأصلي قبل الخصم"""
-        return self.price
-
-    @property
     def price_after_discount(self):
         """السعر بعد تطبيق الخصم النسبي"""
         if self.price is None:

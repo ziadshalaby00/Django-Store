@@ -13,31 +13,31 @@ from rest_framework.pagination import PageNumberPagination
 from .models import Category, Brand
 from .serializers import CategorySerializer, BrandSerializer, ProductDetailSerializer
 
+from django.db.models import F, ExpressionWrapper, DecimalField
+
 class ProductListView(APIView):
     """
     GET parameters:
-    - id: get product by id
     - category: filter by category id
     - brand: filter by brand id
     - min_price, max_price: filter by price_after_discount range
-    - name: filter by name contains
-    - description: filter by description contains
+    - search: filter by name or description contains
+    - ordering: 'price' or '-price' or 'created_at' or '-created_at'
+    - page: page number for pagination
     """
 
     def get(self, request):
         queryset = Product.objects.filter(is_active=True)
 
-        # فلترة حسب Category
+        # ---- Filters ----
         category_id = request.query_params.get('category')
         if category_id:
             queryset = queryset.filter(category_id=category_id)
 
-        # فلترة حسب Brand
         brand_id = request.query_params.get('brand')
         if brand_id:
             queryset = queryset.filter(brand_id=brand_id)
-            
-        # فلترة حسب Name أو Description
+
         search_query = request.query_params.get('search')
         if search_query:
             queryset = queryset.filter(
@@ -45,29 +45,37 @@ class ProductListView(APIView):
                 Q(description__icontains=search_query)
             )
 
-        # فلترة حسب Price بعد الخصم (خاصية محسوبة)
+        # Annotate price_after_discount (price * (1 - discount/100))
+        queryset = queryset.annotate(
+            price_after_discount_value=ExpressionWrapper(
+                F("price") * (1 - F("discount_percentage") / 100.0),
+                output_field=DecimalField(max_digits=10, decimal_places=2)
+            )
+        )
+
+        # min_price & max_price
         min_price = request.query_params.get('min_price')
-        max_price = request.query_params.get('max_price')
         if min_price:
-            queryset = [p for p in queryset if p.price_after_discount >= float(min_price)]
+            queryset = queryset.filter(price_after_discount_value__gte=min_price)
+
+        max_price = request.query_params.get('max_price')
         if max_price:
-            queryset = [p for p in queryset if p.price_after_discount <= float(max_price)]
+            queryset = queryset.filter(price_after_discount_value__lte=max_price)
 
-        # Sorting
-        ordering = request.query_params.get('ordering')  # مثال: 'price' أو '-created_at'
+        # ---- Ordering ----
+        ordering = request.query_params.get('ordering')
         if ordering:
-            if ordering.lstrip('-') == 'price':
-                reverse = ordering.startswith('-')
-                queryset = sorted(queryset, key=lambda p: p.price_after_discount, reverse=reverse)
-            elif ordering.lstrip('-') == 'created_at':
-                reverse = ordering.startswith('-')
-                queryset = sorted(queryset, key=lambda p: p.created_at, reverse=reverse)
+            if ordering.lstrip('-') in ['price', 'created_at']:
+                if ordering.lstrip('-') == 'price':
+                    ordering = ordering.replace('price', 'price_after_discount_value')
+                queryset = queryset.order_by(ordering)
 
-        # Pagination
+        # ---- Pagination ----
         paginator = PageNumberPagination()
         result_page = paginator.paginate_queryset(queryset, request)
         serializer = ProductSerializer(result_page, many=True)
         return paginator.get_paginated_response(serializer.data)
+
 
 class ProductDetailView(APIView):
     def get(self, request, product_id):

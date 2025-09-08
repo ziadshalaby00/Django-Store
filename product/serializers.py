@@ -3,7 +3,6 @@ from .models import Product
 from reviews.serializers import ReviewSerializer
 
 class ProductSerializer(serializers.ModelSerializer):
-    price_before_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     price_after_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     average_rating = serializers.SerializerMethodField()
     
@@ -13,7 +12,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'description',
-            'price_before_discount',
+            'price',
             'price_after_discount',
             'discount_percentage',
             'stock',

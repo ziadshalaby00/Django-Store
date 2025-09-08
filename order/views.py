@@ -14,6 +14,7 @@ from django.db import transaction
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
+from product.models import Product
 
 class CreateOrderAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -45,6 +46,10 @@ class CreateOrderAPIView(APIView):
 
         try:
             with transaction.atomic():
+                # Lock the products in the cart
+                product_ids = [item.product_id for item in cart_items]
+                products = Product.objects.select_for_update().filter(id__in=product_ids)
+                product_map = {p.id: p for p in products}
 
                 order = Order.objects.create(
                     user=user,
@@ -54,36 +59,30 @@ class CreateOrderAPIView(APIView):
 
                 order_items = []
                 for item in cart_items:
-                    product = item.product
-                    
+                    product = product_map[item.product_id]
+
                     if item.quantity > settings.MAX_QUANTITY_PER_ITEM:
                         raise ValidationError(
                             f"The maximum quantity per product is {settings.MAX_QUANTITY_PER_ITEM}."
                         )
-        
+
                     if product.stock < item.quantity:
-                        # لو الكمية مش كافية، ارفع Exception عشان rollback يحصل
                         raise ValidationError(
                             {"detail": f"Only {product.stock} items available in stock for product {product.name}."}
                         )
-                     
+
                     product.stock -= item.quantity
                     product.save()
 
-                    order_item = OrderItem(
+                    order_items.append(OrderItem(
                         order=order,
                         product=product,
                         quantity=item.quantity,
-                        price_at_purchase=product.price
-                    )
-                    order_items.append(order_item)
+                        price_at_purchase=product.price_after_discount
+                    ))
 
                 OrderItem.objects.bulk_create(order_items)
-                
-                # حساب total_price للأوردر
                 order.calculate_total()
-
-                # مسح الكارت بعد إنشاء الأوردر
                 cart_items.delete()
 
                 serializer = OrderSerializer(order)
