@@ -30,7 +30,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['2e15f00c8557.ngrok-free.app', '*']
 
 
 # Application definition
@@ -73,10 +73,11 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / "templates"],  # لازم يكون المجلد اللي فيه base_site.html
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
+                'django.template.context_processors.debug',
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
@@ -144,7 +145,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -235,5 +239,14 @@ MAX_PAYMENT_ATTEMPTS = 3 # أقصى عدد محاولات دفع للأوردر 
 # خيارات الدفع الممكنة في الموقع
 AVAILABLE_PAYMENT_METHODS = [
     ("cod", "Cash on Delivery"),
-    ("card", "EasyCash / Online Card"),
+    ("paymob", "Paymob Online Payment"),
 ]
+
+PAYMOB_PAYMENT_METHODS = [
+    5270195,
+    5270188,
+    5270040
+]  # طرق الدفع المدعومة في Paymob
+
+PAYMOB_SECRET_KEY = env("PAYMOB_SECRET_KEY")
+PAYMOB_PUBLIC_KEY = env("PAYMOB_PUBLIC_KEY")

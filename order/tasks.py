@@ -25,7 +25,7 @@ def clean_unpaid_orders():
     ).distinct()
 
     card_orders = Order.objects.filter(
-        payment_method="card",
+        payment_method="paymob",
         is_paid=False,
         created_at__lt=now - timedelta(minutes=CARD_EXPIRATION_MINUTES)
     ).exclude(

@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
 from product.models import Product
-
+from django.conf import settings
 
 class CartView(generics.RetrieveAPIView):
     """Get current user's cart"""
@@ -32,6 +32,15 @@ class AddToCartView(generics.CreateAPIView):
         quantity = int(request.data.get("quantity", 1))
 
         product = get_object_or_404(Product, id=product_id)
+
+        if quantity < 1:
+            return Response({"detail": "Invalid quantity."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if quantity > settings.MAX_QUANTITY_PER_ITEM:
+            return Response(
+                {"detail": f"The maximum quantity per product is {settings.MAX_QUANTITY_PER_ITEM}."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         # تحقق من المخزون
         if quantity > product.stock:
@@ -70,7 +79,13 @@ class UpdateCartItemView(generics.UpdateAPIView):
         if quantity < 1:
             cart_item.delete()
             return Response({"detail": "Item removed"}, status=204)
-        
+
+        if quantity > settings.MAX_QUANTITY_PER_ITEM:
+            return Response(
+                {"detail": f"The maximum quantity per product is {settings.MAX_QUANTITY_PER_ITEM}."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
         # تحقق من المخزون
         if quantity > cart_item.product.stock:
             return Response(

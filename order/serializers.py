@@ -23,6 +23,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = (
             "id",
+            "order_number",
             "user",
             "total_price",
             "currency",
@@ -35,4 +36,4 @@ class OrderSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "user", "total_price", "currency", "payment_status", "is_paid", "paid_at", "items", "created_at", "updated_at",)
+        read_only_fields = ("id", "order_number", "user", "total_price", "currency", "payment_status", "is_paid", "paid_at", "items", "created_at", "updated_at",)

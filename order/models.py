@@ -7,6 +7,7 @@ from django.contrib.auth import get_user_model
 from product.models import Product
 from address.models import Address
 from django.conf import settings
+import uuid
 
 User = get_user_model()
 
@@ -25,9 +26,9 @@ class Order(models.Model):
         max_length=20,
         choices=getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
             ("cod", "Cash on Delivery"),
-            ("card", "EasyCash / Online Card"),
+            ("paymob", "Paymob Online Payment"),
         ]),
-        default="card"
+        default="paymob"
     )
     
     payment_status = models.CharField(max_length=20, choices=PAID_STATUS, default="unpaid")
@@ -41,12 +42,25 @@ class Order(models.Model):
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     currency = models.CharField(max_length=3, default="EGP", editable=False)
     
+    # --- New field ---
+    order_number = models.CharField(max_length=20, unique=True, editable=False)
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            # توليد رقم أوردر بصيغة منظمة
+            # مثال: ORD-20250908-AB12CD
+            import datetime
+            today = datetime.date.today().strftime("%Y%m%d")
+            random_code = uuid.uuid4().hex[:6].upper()
+            self.order_number = f"ORD-{today}-{random_code}"
+        super().save(*args, **kwargs)
+
     def __str__(self):
         username = self.user.username if self.user else "Deleted user"
-        return f"Order #{self.id} - {username} - {self.payment_status}"
+        return f"Order {self.order_number} - {username} - {self.payment_status}"
 
     def calculate_total(self):
         total = sum(item.subtotal for item in self.items.all())

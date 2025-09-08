@@ -35,7 +35,7 @@ class CreateOrderAPIView(APIView):
         unpaid_orders_count = Order.objects.filter(user=request.user, is_paid=False).exclude(payment_status="expired").count()
         if unpaid_orders_count >= settings.MAX_UNPAID_ORDERS_PER_USER:
             return Response({
-                "detail": f"You have reached the maximum of {settings.MAX_UNPAID_ORDERS_PER_USER} unpaid orders."
+                "detail": f"You have reached the maximum of {settings.MAX_UNPAID_ORDERS_PER_USER} unpaid orders. please pay for existing orders before creating new ones. or wait for them to expire."
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # جلب الكارت ومحتوياته
@@ -54,7 +54,7 @@ class CreateOrderAPIView(APIView):
                 order = Order.objects.create(
                     user=user,
                     shipping_address=shipping_address,
-                    payment_method=request.data.get("payment_method", "card")
+                    payment_method=request.data.get("payment_method", "paymob")
                 )
 
                 order_items = []
@@ -70,6 +70,9 @@ class CreateOrderAPIView(APIView):
                         raise ValidationError(
                             {"detail": f"Only {product.stock} items available in stock for product {product.name}."}
                         )
+
+                    if item.quantity < 1:
+                        raise ValidationError("Invalid quantity.")
 
                     product.stock -= item.quantity
                     product.save()
@@ -111,7 +114,7 @@ class PaymentMethodsAPIView(APIView):
         # إرجاع قائمة الـ choices
         methods = getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
             ("cod", "Cash on Delivery"),
-            ("card", "EasyCash / Online Card"),
+            ("paymob", "Paymob Online Payment"),
         ])
         return Response([
             {"value": key, "display": label} for key, label in methods

@@ -21,6 +21,6 @@ def expire_pending_payments():
     )
 
     with transaction.atomic():
-        updated_count = payments.update(status="failed")
+        updated_count = payments.update(status="canceled")
 
-    return f"Marked {updated_count} pending payments as failed."
+    return f"Marked {updated_count} pending payments as canceled."
