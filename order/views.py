@@ -31,7 +31,7 @@ class CreateOrderAPIView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        unpaid_orders_count = Order.objects.filter(user=request.user, is_paid=False).count()
+        unpaid_orders_count = Order.objects.filter(user=request.user, is_paid=False).exclude(payment_status="expired").count()
         if unpaid_orders_count >= settings.MAX_UNPAID_ORDERS_PER_USER:
             return Response({
                 "detail": f"You have reached the maximum of {settings.MAX_UNPAID_ORDERS_PER_USER} unpaid orders."

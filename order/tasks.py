@@ -18,19 +18,27 @@ def clean_unpaid_orders():
         payment_method="cod",
         is_paid=False,
         created_at__lt=now - timedelta(days=COD_EXPIRATION_DAYS)
-    )
+    ).exclude(
+        payments__status="pending"   # استبعد اللي عنده pending
+    ).exclude(
+        payment_status="expired"
+    ).distinct()
 
     card_orders = Order.objects.filter(
         payment_method="card",
         is_paid=False,
         created_at__lt=now - timedelta(minutes=CARD_EXPIRATION_MINUTES)
-    )
+    ).exclude(
+        payments__status="pending"   # استبعد اللي عنده pending
+    ).exclude(
+        payment_status="expired"
+    ).distinct()
 
     with transaction.atomic():
         for order in cod_orders:
-            order.delete()  # signal OrderItem يرجع المخزون تلقائيًا
+            order.set_status("expired") # signal OrderItem يرجع المخزون تلقائيًا
 
         for order in card_orders:
-            order.delete()  # signal OrderItem يرجع المخزون تلقائيًا
+            order.set_status("expired") # signal OrderItem يرجع المخزون تلقائيًا
 
-    return f"Deleted {cod_orders.count()} unpaid COD orders and {card_orders.count()} unpaid Card orders."
+    return f"Expired {cod_orders.count()} unpaid COD orders and {card_orders.count()} unpaid Card orders."

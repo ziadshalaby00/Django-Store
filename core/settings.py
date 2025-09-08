@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     "order",
     "address",
     'django_celery_beat',
-    'django_celery_results'
+    'django_celery_results',
+    "payment",
 ]
 
 MIDDLEWARE = [
@@ -227,7 +228,8 @@ CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 
 
 MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفوعة لكل مستخدم
-MAX_QUANTITY_PER_ITEM = 20 # أقصى كمية لكل منتج في أي order
+MAX_QUANTITY_PER_ITEM = 15 # أقصى كمية لكل منتج في أي order
+MAX_PAYMENT_ATTEMPTS = 3 # أقصى عدد محاولات دفع للأوردر قبل إلغاؤه
 
 
 # خيارات الدفع الممكنة في الموقع

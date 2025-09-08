@@ -16,6 +16,8 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ("unpaid", "Unpaid"),
         ("paid", "Paid"),
+        ("unpayable", "Unpayable"),
+        ('expired', 'Expired'),
     ]
 
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="orders")
@@ -52,6 +54,26 @@ class Order(models.Model):
         self.save()
         return self.total_price
 
+    def set_status(self, new_status: str):
+        """
+        Update order status + handle stock if expired
+        """
+        # لو الأوردر بقى expired → رجع المخزون
+        if new_status == "expired" and self.payment_status != "expired":
+            for item in self.items.all():
+                if item.product:
+                    item.product.stock += item.quantity
+                    item.product.save()
+
+        # لو الأوردر اتدفع → علمه paid وخزن تاريخ الدفع
+        if new_status == "paid":
+            self.is_paid = True
+            from django.utils import timezone
+            self.paid_at = timezone.now()
+
+        self.payment_status = new_status
+        self.save()
+
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
@@ -65,14 +87,3 @@ class OrderItem(models.Model):
     @property
     def subtotal(self):
         return self.price_at_purchase * self.quantity
-
-
-@receiver(post_delete, sender=OrderItem)
-def restore_product_stock(sender, instance, **kwargs):
-    product = instance.product
-    order = instance.order
-
-    # تحقق إن المنتج موجود والأوردر مش مدفوع
-    if product and not order.is_paid:
-        product.stock += instance.quantity
-        product.save()

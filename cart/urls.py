@@ -8,7 +8,7 @@ from .views import (
 )
 
 urlpatterns = [
-    path("", CartView.as_view(), name="cart-detail"),
+    path("get-cart/", CartView.as_view(), name="cart-detail"),
     path("add/", AddToCartView.as_view(), name="cart-add"),
     path("update/<int:pk>/", UpdateCartItemView.as_view(), name="cart-update"),
     path("remove/<int:pk>/", RemoveFromCartView.as_view(), name="cart-remove"),
