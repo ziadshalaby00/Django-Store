@@ -11,6 +11,8 @@ from .models import Payment
 import requests
 from django.conf import settings
 from rest_framework.permissions import IsAuthenticated
+from django.utils import timezone
+from datetime import timedelta
 
 class CreatePaymentView(APIView):
     permission_classes = [IsAuthenticated]  # يمكن تعديلها حسب الحاجة
@@ -20,7 +22,13 @@ class CreatePaymentView(APIView):
     """
 
     def post(self, request, order_id):
-        order = get_object_or_404(Order, id=order_id, user=request.user)
+        order = get_object_or_404(
+            Order.objects
+            .select_related("shipping_address")
+            .prefetch_related("items", "payments"),
+            id=order_id,
+            user=request.user
+        )
         
         # إذا الدفع عند الاستلام
         if order.payment_method.lower() == "cod":
@@ -37,34 +45,49 @@ class CreatePaymentView(APIView):
                 "order_number": order.order_number
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        # إذا كانت حالة الدفع "expired"
         elif order.payment_status == "expired":
             return Response({
                 "message": "Payment window expired. You cannot pay this order anymore.",
                 "order_number": order.order_number
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # إذا وصلنا هنا، الدفع ممكن
+        # التحقق من عدد محاولات الدفع
         payments = order.payments.all().count()
-        if payments >= settings.MAX_PAYMENT_ATTEMPTS:
+        if payments >= settings.MAX_PAYMENT_ATTEMPTS_PER_ORDER:
             order.payment_status = "unpayable"
         order.save()
         
+        # إذا كانت حالة الدفع "unpayable"
         if order.payment_status == "unpayable":
             return Response({
                 "message": "Payment attempts exceeded. You cannot pay this order.",
                 "order_number": order.order_number
             }, status=status.HTTP_400_BAD_REQUEST)
 
+        # التحقق من وجود رابط دفع نشط
+        active_payment_exists = order.payments.filter(
+            status="pending",
+            created_at__gte=timezone.now() - timedelta(seconds=settings.PAYMENT_LINK_LIFETIME_SECONDS)
+        )
+
+        if active_payment_exists.exists():
+            return Response({
+                "message": "There is already an active payment link. Please use the existing one.",
+                "payment_url": active_payment_exists.first().payment_url,
+                "order_number": order.order_number
+            }, status=status.HTTP_200_OK)
+
         # مثال: الدفع عبر Paymob
         if order.payment_method.lower() == "paymob":
             # إعداد بيانات Intention API
-            paymob_secret_key = settings.PAYMOB_SECRET_KEY  # ضيف المفتاح في settings.py
+            paymob_secret_key = settings.PAYMOB_SECRET_KEY
             amount = int(order.total_price) * 100  # Paymob expects amount in cents/piasters
             
             payload = {
                 "amount": amount,
                 "currency": order.currency,
-                "payment_methods": settings.PAYMOB_PAYMENT_METHODS,  # أو Integration ID
+                "payment_methods": settings.PAYMOB_PAYMENT_METHODS,
                 "items": [
                     {
                         "name": item.product.name[:50],
@@ -79,7 +102,8 @@ class CreatePaymentView(APIView):
                     "email": request.user.email,
                     "phone_number": order.shipping_address.phone,
                     "country": order.shipping_address.country,
-                }
+                },
+                "expiration": settings.PAYMOB_EXPIRATION_SECONDS,
             }
 
             headers = {
@@ -95,7 +119,6 @@ class CreatePaymentView(APIView):
             )
 
             if response.status_code != 201 and response.status_code != 200:
-                print(response.json())
                 return Response({"error": "Failed to create payment intention"}, status=status.HTTP_400_BAD_REQUEST)
             
             data = response.json()
@@ -137,6 +160,17 @@ class PaymobCallbackView(APIView):
     Handles Paymob webhook callback for transaction updates.
     """
 
+    def normalize_value(self, val):
+        """
+        Normalize values to match Paymob's expected HMAC format.
+        """
+        if val is None or val == "null":
+            return ""
+        if isinstance(val, bool):
+            return str(val).lower()  # True -> "true", False -> "false"
+        return str(val)
+
+
     def post(self, request):
         data = request.data
         obj = data.get("obj", {})
@@ -163,31 +197,51 @@ class PaymobCallbackView(APIView):
             "source_data.type": obj.get("source_data", {}).get("type"),
             "success": obj.get("success"),
         }
-
-        # Extract query parameters from URL
+            
+        # HMAC must be provided
         received_hmac = request.query_params.get("hmac")
-
         if not received_hmac:
-            print("HMAC missing in callback")
             return Response({"message": "HMAC missing"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Sort params alphabetically and concatenate values
-        concatenated_string = "".join([str(keys[k]) for k in keys.keys()])
+        # Correct order from Paymob docs
+        keys_order = [
+            "amount_cents",
+            "created_at",
+            "currency",
+            "error_occured",
+            "has_parent_transaction",
+            "obj.id",
+            "integration_id",
+            "is_3d_secure",
+            "is_auth",
+            "is_capture",
+            "is_refunded",
+            "is_standalone_payment",
+            "is_voided",
+            "order.id",
+            "owner",
+            "pending",
+            "source_data.pan",
+            "source_data.sub_type",
+            "source_data.type",
+            "success",
+        ]
 
-        # Compute HMAC using your Paymob HMAC secret
+        # Build concatenated string
+        concatenated_string = "".join([self.normalize_value(keys[k]) for k in keys_order])
+
+        # Compute HMAC
         computed_hmac = hmac.new(
-            settings.PAYMOB_HMAC_SECRET.encode("utf-8"),  # Use the HMAC secret from settings
+            settings.PAYMOB_HMAC_SECRET.encode("utf-8"),
             concatenated_string.encode("utf-8"),
             hashlib.sha512
         ).hexdigest()
 
-        # Constant-time comparison
+        # Verify
         if not hmac.compare_digest(computed_hmac, received_hmac):
-            print("Invalid HMAC in callback")
             return Response({"message": "Invalid HMAC"}, status=status.HTTP_400_BAD_REQUEST)
 
         if data.get("type") != "TRANSACTION":
-            print("Not a transaction callback")
             return Response({"message": "Not a transaction callback"}, status=status.HTTP_400_BAD_REQUEST)
 
         paymob_order_id = obj.get("order", {}).get("id")
@@ -195,7 +249,6 @@ class PaymobCallbackView(APIView):
 
         payment = Payment.objects.filter(paymob_order_id=paymob_order_id).first()
         if not payment:
-            print("Payment not found for order ID:", paymob_order_id)
             return Response({"message": "Payment not found"}, status=status.HTTP_202_ACCEPTED)
 
         payment.webhook_received = True
@@ -204,21 +257,15 @@ class PaymobCallbackView(APIView):
 
         order = payment.order
         if not order:
-            print("Order not found for payment ID:", payment.id)
             return Response({"message": "Order not found"}, status=status.HTTP_202_ACCEPTED)
 
         if order.is_paid:
-            print("Order already marked as paid:", order.order_number)
             return Response({"message": "Order already marked as paid"}, status=status.HTTP_200_OK)
 
         if success:
-            print("Payment successful for order:", order.order_number)
             order.set_status("paid")
             payment.mark_as_paid()
-            print("Order marked as paid:", order.order_number)
         else:
-            print("Payment failed for order:", order.order_number)
             payment.mark_as_failed()
 
-        print("Callback processed successfully for order:", order.order_number)
         return Response({"message": "Callback processed successfully"}, status=status.HTTP_200_OK)

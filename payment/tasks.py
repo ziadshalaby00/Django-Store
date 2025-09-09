@@ -3,13 +3,13 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db import transaction
 from .models import Payment
-
+from django.conf import settings
 
 @shared_task
 def expire_pending_payments():
     print("Running expire_pending_payments task...")
 
-    PAYMENT_EXPIRATION_MINUTES = 30
+    PAYMENT_EXPIRATION_MINUTES = settings.SYSTEM_PAYMENT_EXPIRE_MINUTES
 
     now = timezone.now()
     expiration_time = now - timedelta(minutes=PAYMENT_EXPIRATION_MINUTES)

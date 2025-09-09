@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db import transaction
 from .models import Order
+from django.conf import settings
 
 @shared_task
 def clean_unpaid_orders():
@@ -10,14 +11,10 @@ def clean_unpaid_orders():
     
     now = timezone.now()
 
-    # إعداد الفترات الزمنية
-    COD_EXPIRATION_DAYS = 4
-    CARD_EXPIRATION_MINUTES = 30
-
     cod_orders = Order.objects.filter(
         payment_method="cod",
         is_paid=False,
-        created_at__lt=now - timedelta(days=COD_EXPIRATION_DAYS)
+        created_at__lt=now - timedelta(days=settings.COD_ORDER_EXPIRE_DAYS)
     ).exclude(
         payments__status="pending"   # استبعد اللي عنده pending
     ).exclude(
@@ -27,7 +24,7 @@ def clean_unpaid_orders():
     card_orders = Order.objects.filter(
         payment_method="paymob",
         is_paid=False,
-        created_at__lt=now - timedelta(minutes=CARD_EXPIRATION_MINUTES)
+        created_at__lt=now - timedelta(minutes=settings.ORDER_EXPIRE_MINUTES)
     ).exclude(
         payments__status="pending"   # استبعد اللي عنده pending
     ).exclude(

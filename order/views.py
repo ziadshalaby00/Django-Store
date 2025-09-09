@@ -61,9 +61,9 @@ class CreateOrderAPIView(APIView):
                 for item in cart_items:
                     product = product_map[item.product_id]
 
-                    if item.quantity > settings.MAX_QUANTITY_PER_ITEM:
+                    if item.quantity > settings.MAX_QTY_PER_ITEM:
                         raise ValidationError(
-                            f"The maximum quantity per product is {settings.MAX_QUANTITY_PER_ITEM}."
+                            f"The maximum quantity per product is {settings.MAX_QTY_PER_ITEM}."
                         )
 
                     if product.stock < item.quantity:

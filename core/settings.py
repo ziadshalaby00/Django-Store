@@ -230,11 +230,10 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 CELERY_BROKER_URL = "redis://localhost:6379/0"  # مثال لو تستخدم Redis
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 
-
+# maximum limits
 MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفوعة لكل مستخدم
-MAX_QUANTITY_PER_ITEM = 15 # أقصى كمية لكل منتج في أي order
-MAX_PAYMENT_ATTEMPTS = 3 # أقصى عدد محاولات دفع للأوردر قبل إلغاؤه
-
+MAX_QTY_PER_ITEM = 15 # أقصى كمية لكل منتج في أي order
+MAX_PAYMENT_ATTEMPTS_PER_ORDER = 3 # أقصى عدد محاولات دفع للأوردر قبل إلغاؤه
 
 # خيارات الدفع الممكنة في الموقع
 AVAILABLE_PAYMENT_METHODS = [
@@ -252,3 +251,9 @@ PAYMOB_PAYMENT_METHODS = [
 PAYMOB_SECRET_KEY = env("PAYMOB_SECRET_KEY")
 PAYMOB_PUBLIC_KEY = env("PAYMOB_PUBLIC_KEY")
 PAYMOB_HMAC_SECRET = env("PAYMOB_HMAC_SECRET")
+
+# expiration settings
+PAYMENT_LINK_LIFETIME_SECONDS = 1200  # 20 دقيقة
+SYSTEM_PAYMENT_EXPIRE_MINUTES = 30  # 30 دقيقة
+COD_ORDER_EXPIRE_DAYS = 4  # 4 أيام
+ORDER_EXPIRE_MINUTES = 30  # 30 دقيقة
