@@ -22,13 +22,14 @@ def clean_unpaid_orders():
     ).distinct()
 
     card_orders = Order.objects.filter(
-        payment_method="paymob",
         is_paid=False,
         created_at__lt=now - timedelta(minutes=settings.ORDER_EXPIRE_MINUTES)
     ).exclude(
         payments__status="pending"   # استبعد اللي عنده pending
     ).exclude(
         payment_status="expired"
+    ).exclude(
+        payment_method="cod"          # استبعد الدفع عند الاستلام
     ).distinct()
 
     with transaction.atomic():

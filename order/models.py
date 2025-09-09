@@ -24,11 +24,7 @@ class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="orders")
     payment_method = models.CharField(
         max_length=20,
-        choices=getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
-            ("cod", "Cash on Delivery"),
-            ("paymob", "Paymob Online Payment"),
-        ]),
-        default="paymob"
+        choices=getattr(settings, "AVAILABLE_PAYMENT_METHODS", [])
     )
     
     payment_status = models.CharField(max_length=20, choices=PAID_STATUS, default="unpaid")
@@ -91,7 +87,7 @@ class Order(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True)
     quantity = models.PositiveIntegerField(default=1)
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 

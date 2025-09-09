@@ -235,18 +235,17 @@ MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفو�
 MAX_QTY_PER_ITEM = 15 # أقصى كمية لكل منتج في أي order
 MAX_PAYMENT_ATTEMPTS_PER_ORDER = 3 # أقصى عدد محاولات دفع للأوردر قبل إلغاؤه
 
+PAYMOB_PAYMENT_METHODS = [
+    "mobile wallet",
+    "paypal",
+    "online card"
+] # طرق الدفع المدعومة في Paymob
+
 # خيارات الدفع الممكنة في الموقع
 AVAILABLE_PAYMENT_METHODS = [
     ("cod", "Cash on Delivery"),
-    ("paymob", "Paymob Online Payment"),
 ]
-
-PAYMOB_PAYMENT_METHODS = [
-    5270197,
-    5270195,
-    5270188,
-    5270040
-]  # طرق الدفع المدعومة في Paymob
+AVAILABLE_PAYMENT_METHODS += [(k, k.capitalize()) for k in PAYMOB_PAYMENT_METHODS]
 
 PAYMOB_SECRET_KEY = env("PAYMOB_SECRET_KEY")
 PAYMOB_PUBLIC_KEY = env("PAYMOB_PUBLIC_KEY")

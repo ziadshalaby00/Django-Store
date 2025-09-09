@@ -51,10 +51,14 @@ class CreateOrderAPIView(APIView):
                 products = Product.objects.select_for_update().filter(id__in=product_ids)
                 product_map = {p.id: p for p in products}
 
+                method_key = request.data.get('payment_method', '').lower()
+                if method_key not in [k[0] for k in settings.AVAILABLE_PAYMENT_METHODS]:
+                    return Response({"detail": "Invalid payment method."}, status=status.HTTP_400_BAD_REQUEST)
+                
                 order = Order.objects.create(
                     user=user,
                     shipping_address=shipping_address,
-                    payment_method=request.data.get("payment_method", "paymob")
+                    payment_method=method_key
                 )
 
                 order_items = []
@@ -93,8 +97,24 @@ class CreateOrderAPIView(APIView):
 
         except ValidationError as e:
             return Response(e.detail, status=status.HTTP_400_BAD_REQUEST)
-    
-    
+
+
+class EditOrderPaymentAPIView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, order_id):
+        order = get_object_or_404(Order, id=order_id, user=request.user)
+        method_key = request.data.get('payment_method', '').lower()
+
+        if method_key not in [k[0] for k in settings.AVAILABLE_PAYMENT_METHODS]:
+            return Response({"detail": "Invalid payment method."}, status=status.HTTP_400_BAD_REQUEST)
+
+        order.payment_method = method_key
+        order.save()
+
+        return Response({"detail": "Payment method updated successfully."}, status=status.HTTP_200_OK)
+
+
 class UserOrdersAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -112,10 +132,7 @@ class PaymentMethodsAPIView(APIView):
 
     def get(self, request):
         # إرجاع قائمة الـ choices
-        methods = getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
-            ("cod", "Cash on Delivery"),
-            ("paymob", "Paymob Online Payment"),
-        ])
+        methods = getattr(settings, "AVAILABLE_PAYMENT_METHODS", [])
         return Response([
             {"value": key, "display": label} for key, label in methods
         ], status=status.HTTP_200_OK)

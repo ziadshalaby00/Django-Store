@@ -78,76 +78,80 @@ class CreatePaymentView(APIView):
                 "order_number": order.order_number
             }, status=status.HTTP_200_OK)
 
-        # مثال: الدفع عبر Paymob
-        if order.payment_method.lower() == "paymob":
-            # إعداد بيانات Intention API
-            paymob_secret_key = settings.PAYMOB_SECRET_KEY
-            amount = int(order.total_price) * 100  # Paymob expects amount in cents/piasters
-            
-            payload = {
-                "amount": amount,
-                "currency": order.currency,
-                "payment_methods": settings.PAYMOB_PAYMENT_METHODS,
-                "items": [
-                    {
-                        "name": item.product.name[:50],
-                        "amount": int(item.price_at_purchase) * 100,
-                        "description": item.product.description[:255] if item.product.description else item.product.name[:255],
-                        "quantity": item.quantity
-                    } for item in order.items.all()
-                ],
-                "billing_data": {
-                    "first_name": order.shipping_address.full_name.split()[0],
-                    "last_name": order.shipping_address.full_name.split()[-1],
-                    "email": request.user.email,
-                    "phone_number": order.shipping_address.phone,
-                    "country": order.shipping_address.country,
-                },
-                "expiration": settings.PAYMOB_EXPIRATION_SECONDS,
-            }
+        # إعداد بيانات Intention API
+        paymob_secret_key = settings.PAYMOB_SECRET_KEY
+        amount = int(order.total_price) * 100  # Paymob expects amount in cents/piasters
+        
+        payment_methods = [order.payment_method]
+        if payment_methods[0] is None:
+            payment_methods = settings.PAYMOB_PAYMENT_METHODS  # all methods
 
-            headers = {
-                "Authorization": f"Token {paymob_secret_key}",
-                "Content-Type": "application/json"
-            }
+        payload = {
+            "amount": amount,
+            "currency": order.currency,
+            "payment_methods": payment_methods,
+            "items": [
+                {
+                    "name": item.product.name[:50],
+                    "amount": int(item.price_at_purchase) * 100,
+                    "description": item.product.description[:255] if item.product.description else item.product.name[:255],
+                    "quantity": item.quantity
+                } for item in order.items.all()
+            ],
+            "billing_data": {
+                "first_name": order.shipping_address.full_name.split()[0],
+                "last_name": order.shipping_address.full_name.split()[-1],
+                "email": request.user.email,
+                "phone_number": order.shipping_address.phone,
+                "country": order.shipping_address.country,
+            },
+            "expiration": settings.PAYMENT_LINK_LIFETIME_SECONDS,
+        }
 
-            # إرسال الطلب لـ Paymob Intention API
-            response = requests.post(
-                "https://accept.paymob.com/v1/intention/",
-                json=payload,
-                headers=headers
-            )
+        headers = {
+            "Authorization": f"Token {paymob_secret_key}",
+            "Content-Type": "application/json"
+        }
 
-            if response.status_code != 201 and response.status_code != 200:
-                return Response({"error": "Failed to create payment intention"}, status=status.HTTP_400_BAD_REQUEST)
-            
-            data = response.json()
-            
-            payment_methods = '--'.join([method['name'] for method in data.get('payment_methods', [])])
-            # إنشاء Payment object في النظام
-            payment = Payment.objects.create(
-                user=request.user,
-                order=order,
-                amount=order.total_price,
-                currency=order.currency,
-                status="pending",
-                provider="Paymob",
-                provider_payment_id=data.get("id"),
-                paymob_order_id=data.get("intention_order_id"),
-                client_secret=data.get("client_secret"),
-                payment_method=payment_methods,
-                payment_url=f"https://accept.paymob.com/unifiedcheckout/?publicKey={settings.PAYMOB_PUBLIC_KEY}&clientSecret={data.get('client_secret')}"
-            )
+        # إرسال الطلب لـ Paymob Intention API
+        response = requests.post(
+            "https://accept.paymob.com/v1/intention/",
+            json=payload,
+            headers=headers
+        )
 
-            order.payment_status = "pending"
-            order.save()
+        if response.status_code != 201 and response.status_code != 200:
+            return Response(
+                {
+                    "error": "Failed to create payment intention",
+                    "details": response.json()
+                }, status=status.HTTP_400_BAD_REQUEST)
+        
+        data = response.json()
+        
+        res_payment_methods = '--'.join([method['name'] for method in data.get('payment_methods', [])])
+        # إنشاء Payment object في النظام
+        payment = Payment.objects.create(
+            user=request.user,
+            order=order,
+            amount=order.total_price,
+            currency=order.currency,
+            status="pending",
+            provider="Paymob",
+            provider_payment_id=data.get("id"),
+            paymob_order_id=data.get("intention_order_id"),
+            client_secret=data.get("client_secret"),
+            payment_method=res_payment_methods,
+            payment_url=f"https://accept.paymob.com/unifiedcheckout/?publicKey={settings.PAYMOB_PUBLIC_KEY}&clientSecret={data.get('client_secret')}"
+        )
 
-            return Response({
-                "payment_url": payment.payment_url,
-            }, status=status.HTTP_201_CREATED)
+        order.payment_status = "pending"
+        order.save()
 
-        # طرق دفع أخرى يمكن إضافتها هنا
-        return Response({"error": "Unsupported payment method"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({
+            "payment_url": payment.payment_url,
+        }, status=status.HTTP_201_CREATED)
+
 
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt

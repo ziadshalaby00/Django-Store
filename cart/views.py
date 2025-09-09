@@ -36,9 +36,9 @@ class AddToCartView(generics.CreateAPIView):
         if quantity < 1:
             return Response({"detail": "Invalid quantity."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if quantity > settings.MAX_QUANTITY_PER_ITEM:
+        if quantity > settings.MAX_QTY_PER_ITEM:
             return Response(
-                {"detail": f"The maximum quantity per product is {settings.MAX_QUANTITY_PER_ITEM}."},
+                {"detail": f"The maximum quantity per product is {settings.MAX_QTY_PER_ITEM}."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -80,9 +80,9 @@ class UpdateCartItemView(generics.UpdateAPIView):
             cart_item.delete()
             return Response({"detail": "Item removed"}, status=204)
 
-        if quantity > settings.MAX_QUANTITY_PER_ITEM:
+        if quantity > settings.MAX_QTY_PER_ITEM:
             return Response(
-                {"detail": f"The maximum quantity per product is {settings.MAX_QUANTITY_PER_ITEM}."},
+                {"detail": f"The maximum quantity per product is {settings.MAX_QTY_PER_ITEM}."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
