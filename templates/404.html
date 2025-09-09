@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page Not Found (404)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            text-align: center;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: 800;
+            color: #FF6B6B;
+            line-height: 1;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 0px rgba(255, 107, 107, 0.2);
+        }
+        
+        .error-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .error-message {
+            font-size: 18px;
+            color: #666;
+            line-height: 1.5;
+            margin-bottom: 30px;
+        }
+        
+        .illustration {
+            max-width: 200px;
+            margin: 25px auto;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            color: #888;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 500px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            .error-code {
+                font-size: 100px;
+            }
+            
+            .error-title {
+                font-size: 24px;
+            }
+            
+            .error-message {
+                font-size: 16px;
+            }
+        }
+        
+        /* Animation */
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+        
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="error-code">404</h1>
+        <h2 class="error-title">Page Not Found</h2>
+        <p class="error-message">The page you are looking for might have been removed or doesn't exist.</p>
+        
+        <svg class="illustration floating" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="100" cy="85" r="40" fill="#FF6B6B" opacity="0.2"/>
+            <circle cx="100" cy="85" r="25" fill="#FF6B6B" opacity="0.3"/>
+            <path d="M70 135 L130 135 L115 160 L85 160 Z" fill="#3498db" opacity="0.2"/>
+            <path d="M85 160 L115 160 L115 175 L85 175 Z" fill="#3498db" opacity="0.3"/>
+            <circle cx="90" cy="80" r="4" fill="#333"/>
+            <circle cx="110" cy="80" r="4" fill="#333"/>
+            <path d="M85 95 Q100 102 115 95" stroke="#333" stroke-width="2" fill="none"/>
+        </svg>
+        
+        <div class="footer">
+            <p>© 2026 Ziadera</p>
+        </div>
+    </div>
+</body>
+</html>
