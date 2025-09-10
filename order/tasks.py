@@ -16,8 +16,6 @@ def clean_unpaid_orders():
         is_paid=False,
         created_at__lt=now - timedelta(days=settings.COD_ORDER_EXPIRE_DAYS)
     ).exclude(
-        payments__status="pending"   # استبعد اللي عنده pending
-    ).exclude(
         payment_status="expired"
     ).distinct()
 
