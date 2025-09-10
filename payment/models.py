@@ -23,7 +23,7 @@ class Payment(models.Model):
     # معلومات الدفع من البوابة
     provider = models.CharField(max_length=50, blank=True, null=True)   # Paymob, Stripe, Fawry
     provider_payment_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
-    payment_method = models.CharField(max_length=20, blank=True, null=True)  # e.g., credit_card, wallet, etc.
+    payment_method = models.CharField(max_length=255, blank=True, null=True)  # e.g., credit_card, wallet, etc.
 
     paymob_order_id = models.CharField(max_length=255, unique=True)  # معرف الطلب في Paymob
 

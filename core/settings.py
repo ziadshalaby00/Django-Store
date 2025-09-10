@@ -28,7 +28,7 @@ environ.Env.read_env(env_file=BASE_DIR / '.env')
 SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['2e15f00c8557.ngrok-free.app', '*']
 
@@ -182,6 +182,7 @@ SIMPLE_JWT = {
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
     "TOKEN_TYPE_CLAIM": "token_type",
+    "UPDATE_LAST_LOGIN": True,
 }
 
 AUTHENTICATION_BACKENDS = (
@@ -235,17 +236,16 @@ MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفو�
 MAX_QTY_PER_ITEM = 15 # أقصى كمية لكل منتج في أي order
 MAX_PAYMENT_ATTEMPTS_PER_ORDER = 3 # أقصى عدد محاولات دفع للأوردر قبل إلغاؤه
 
+AVAILABLE_PAYMENT_METHODS = [
+    ("COD", "Cash on Delivery"),
+    ("EPAY", "E-payment"),
+]
+
 PAYMOB_PAYMENT_METHODS = [
     "mobile wallet",
     "paypal",
     "online card"
 ] # طرق الدفع المدعومة في Paymob
-
-# خيارات الدفع الممكنة في الموقع
-AVAILABLE_PAYMENT_METHODS = [
-    ("cod", "Cash on Delivery"),
-]
-AVAILABLE_PAYMENT_METHODS += [(k, k.capitalize()) for k in PAYMOB_PAYMENT_METHODS]
 
 PAYMOB_SECRET_KEY = env("PAYMOB_SECRET_KEY")
 PAYMOB_PUBLIC_KEY = env("PAYMOB_PUBLIC_KEY")

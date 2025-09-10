@@ -269,3 +269,13 @@ class DeleteUserView(APIView):
         response.delete_cookie("refresh")
 
         return response
+
+from rest_framework.generics import RetrieveAPIView
+from .serializers import UserSerializer
+
+class UserProfileView(RetrieveAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user

@@ -14,7 +14,8 @@ from .views import (
     PasswordResetConfirmView,
     UserUpdateView,
     LogoutView,
-    DeleteUserView
+    DeleteUserView,
+    UserProfileView,
 )
 
 urlpatterns = [
@@ -33,5 +34,6 @@ urlpatterns = [
     
     path("logout/", LogoutView.as_view(), name="logout"),
 
+    path("me/", UserProfileView.as_view(), name="user-profile"),
     path("delete-user/", DeleteUserView.as_view(), name="delete_user"),
 ]

@@ -24,7 +24,11 @@ class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="orders")
     payment_method = models.CharField(
         max_length=20,
-        choices=getattr(settings, "AVAILABLE_PAYMENT_METHODS", [])
+        choices=getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
+            ("COD", "Cash on Delivery"),
+            ("EPAY", "E-payment"),
+        ]), 
+        default="EPAY"
     )
     
     payment_status = models.CharField(max_length=20, choices=PAID_STATUS, default="unpaid")
