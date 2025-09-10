@@ -6,7 +6,7 @@ from rest_framework import permissions, status
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from cart.models import Cart, CartItem
-from .models import Order, OrderItem
+from .models import Order, OrderItem, OrderAddress
 from .serializers import OrderSerializer
 from address.models import Address
 from django.db import transaction
@@ -57,8 +57,19 @@ class CreateOrderAPIView(APIView):
                 
                 order = Order.objects.create(
                     user=user,
-                    shipping_address=shipping_address,
                     payment_method=method_key
+                )
+                
+                OrderAddress.objects.create(
+                    order=order,
+                    label=shipping_address.label,
+                    full_name=shipping_address.full_name,
+                    phone=shipping_address.phone,
+                    street=shipping_address.street,
+                    city=shipping_address.city,
+                    state=shipping_address.state,
+                    postal_code=shipping_address.postal_code,
+                    country=shipping_address.country,
                 )
 
                 order_items = []

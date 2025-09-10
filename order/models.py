@@ -5,12 +5,10 @@ from django.dispatch import receiver
 # Create your models here.
 from django.contrib.auth import get_user_model
 from product.models import Product
-from address.models import Address
 from django.conf import settings
 import uuid
 
 User = get_user_model()
-
 
 class Order(models.Model):
     PAID_STATUS = [
@@ -34,10 +32,6 @@ class Order(models.Model):
     payment_status = models.CharField(max_length=20, choices=PAID_STATUS, default="unpaid")
     is_paid = models.BooleanField(default=False)
     paid_at = models.DateTimeField(blank=True, null=True)  # تاريخ الدفع لو اتدفع
-
-    shipping_address = models.ForeignKey(
-        Address, on_delete=models.PROTECT, related_name="shipping_orders"
-    )
 
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     currency = models.CharField(max_length=3, default="EGP", editable=False)
@@ -88,6 +82,20 @@ class Order(models.Model):
         self.payment_status = new_status
         self.save()
 
+class OrderAddress(models.Model):
+    order = models.OneToOneField(Order, on_delete=models.CASCADE, related_name="shipping_address")
+    label = models.CharField(max_length=100)
+    full_name = models.CharField(max_length=100)
+    phone = models.CharField(max_length=20)
+    street = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=100, blank=True, null=True)
+    postal_code = models.CharField(max_length=20, blank=True, null=True)
+    country = models.CharField(max_length=100, default="Egypt")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.label} - {self.full_name}, {self.city}"
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")

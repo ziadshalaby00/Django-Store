@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 # Register your models here.
-from .models import Order, OrderItem
+from .models import Order, OrderItem, OrderAddress
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -27,3 +27,10 @@ class OrderItemAdmin(admin.ModelAdmin):
     def subtotal_display(self, obj):
         return f"{obj.subtotal} {obj.order.currency}"
     subtotal_display.short_description = "Subtotal"
+
+@admin.register(OrderAddress)
+class OrderAddressAdmin(admin.ModelAdmin):
+    list_display = ("order", "label", "full_name", "city", "country", "created_at")
+    search_fields = ("label", "full_name", "city", "country")
+    list_filter = ("country", "city", "created_at")
+    ordering = ("-created_at",)

@@ -1,10 +1,7 @@
-from django.urls import path
-from .views import UserAddressAPIView
+from rest_framework.routers import DefaultRouter
+from .views import AddressViewSet
 
-urlpatterns = [
-    # GET كل العناوين أو POST لإنشاء عنوان جديد
-    path('addresses/', UserAddressAPIView.as_view(), name='user-address-list-create'),
+router = DefaultRouter()
+router.register(r'addresses', AddressViewSet, basename='address')
 
-    # GET/ PATCH / DELETE على عنوان محدد بالـ ID
-    path('addresses/<int:address_id>/', UserAddressAPIView.as_view(), name='user-address-detail'),
-]
+urlpatterns = router.urls

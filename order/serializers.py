@@ -1,6 +1,5 @@
 from rest_framework import serializers
-from .models import Order, OrderItem
-from address.serializers import AddressSerializer  # لو عندك Serializer للعناوين
+from .models import Order, OrderItem, OrderAddress
 
 class OrderItemSerializer(serializers.ModelSerializer):
     subtotal = serializers.SerializerMethodField()
@@ -14,10 +13,26 @@ class OrderItemSerializer(serializers.ModelSerializer):
         # subtotal مع العملة
         return f"{obj.subtotal} {obj.order.currency}"
 
-
+class OrderAddressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderAddress
+        fields = [
+            "id",
+            "label",
+            "full_name",
+            "phone",
+            "street",
+            "city",
+            "state",
+            "postal_code",
+            "country",
+            "created_at",
+        ]
+        read_only_fields = ["order", "id", "created_at"]
+        
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
-    shipping_address = AddressSerializer(read_only=True)
+    shipping_address = OrderAddressSerializer(read_only=True)
 
     class Meta:
         model = Order

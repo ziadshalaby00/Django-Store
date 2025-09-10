@@ -39,3 +39,9 @@ class CustomUserAdmin(UserAdmin):
         return obj.total_products
     total_products_display.short_description = "Total Products"
 
+
+from django.contrib import admin
+
+admin.site.site_header = "Ziadera Admin"      # العنوان اللي في الأعلى
+admin.site.site_title = "Ziadera Admin Portal" # العنوان في تبويب المتصفح
+admin.site.index_title = "Welcome to Ziadera Admin Dashboard"  # النص في الصفحة الرئيسية

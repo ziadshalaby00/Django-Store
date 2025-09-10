@@ -5,6 +5,6 @@ from .models import Address
 
 @admin.register(Address)
 class AddressAdmin(admin.ModelAdmin):
-    list_display = ("id", "user", "full_name", "street", "city", "country", "phone")
+    list_display = ("id", "label", "user", "full_name", "street", "city", "country", "phone")
     list_filter = ("country", "city")
-    search_fields = ("full_name", "street", "city", "user__username", "user__email")
+    search_fields = ("label", "full_name", "street", "city", "user__username", "user__email")

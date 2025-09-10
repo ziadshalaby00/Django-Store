@@ -14,8 +14,10 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ('product', 'user')  # كل مستخدم يعمل ريفيو واحد بس للمنتج
-        ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=["product", "user"], name="unique_user_product_review")
+        ]
+        ordering = ["-created_at"]
 
     def __str__(self):
         return f"{self.user.username} - {self.product.name} ({self.rating})"
