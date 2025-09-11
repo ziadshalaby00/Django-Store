@@ -50,6 +50,18 @@ class Product(models.Model):
             discount = self.discount_percentage
         return round(self.price * (1 - discount / 100), 2)
 
+class ProductImage(models.Model):
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.CASCADE,
+        related_name="sub_images"
+    )
+    image = models.ImageField(upload_to="products/sub_images/")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Sub Image for {self.product.name}"
+
 
 from django.db.models.signals import pre_save
 from django.dispatch import receiver

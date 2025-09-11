@@ -7,7 +7,7 @@ User = get_user_model()
 
 
 class Address(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="addresses")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="addresses")
     label = models.CharField(max_length=100)
     
     full_name = models.CharField(max_length=100)  # اسم صاحب العنوان

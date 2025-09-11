@@ -32,11 +32,20 @@ class ProductSerializer(serializers.ModelSerializer):
             return round(sum([r.rating for r in reviews]) / reviews.count(), 1)
         return 0
 
+from .models import ProductImage
+
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields = ["id", "image"]
+
+
 class ProductDetailSerializer(ProductSerializer):
     reviews = ReviewSerializer(many=True, read_only=True)
-
+    sub_images = ProductImageSerializer(many=True, read_only=True)  # 👈 أضفنا الصور الإضافية
+    
     class Meta(ProductSerializer.Meta):
-        fields = ProductSerializer.Meta.fields + ['reviews']
+        fields = ProductSerializer.Meta.fields + ['reviews', 'sub_images']
 
 
 from rest_framework import serializers
