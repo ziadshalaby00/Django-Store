@@ -15,9 +15,17 @@ from django.db import transaction
 from rest_framework.exceptions import ValidationError
 from django.conf import settings
 from product.models import Product
+from django.utils import timezone
+from datetime import timedelta
 
 class CreateOrderAPIView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+    
+    def calculate_cooling_period(self, expired_count: int) -> int:
+        base = settings.COOLING_PERIOD_AFTER_EXPIRY  # In minutes
+        cooling = base * (2 ** (expired_count - 1))  # exponential backoff
+        max_cooling = 24 * 60  # 24 hours in minutes
+        return min(cooling, max_cooling)  # Returns the value in minutes
 
     def post(self, request):
         user = request.user
@@ -38,6 +46,34 @@ class CreateOrderAPIView(APIView):
                 "detail": f"You have reached the maximum of {settings.MAX_UNPAID_ORDERS_PER_USER} unpaid orders. please pay for existing orders before creating new ones. or wait for them to expire."
             }, status=status.HTTP_400_BAD_REQUEST)
 
+
+        expired_count = Order.objects.filter(
+            user=request.user,
+            payment_status="expired"
+        ).count()
+
+        if expired_count > 0:
+            cooling_minutes = self.calculate_cooling_period(expired_count)
+            last_expired = Order.objects.filter(
+                user=request.user,
+                payment_status="expired"
+            ).order_by("-updated_at").first()
+
+            cooling_time = last_expired.updated_at + timedelta(minutes=cooling_minutes)
+            if timezone.now() < cooling_time:
+                remaining_seconds = int((cooling_time - timezone.now()).total_seconds())
+                minutes, seconds = divmod(remaining_seconds, 60)
+
+                return Response({
+                    "message": (
+                        f"Your recent orders have expired. To prevent system abuse, "
+                        f"please wait {minutes} minutes and {seconds} seconds before placing a new order."
+                    ),
+                    "retry_after_seconds": remaining_seconds,
+                    "cooling_period_minutes": minutes,
+                    "cooling_period_seconds": seconds
+                }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+                
         # جلب الكارت ومحتوياته
         cart = get_object_or_404(Cart, user=user)
         cart_items = cart.items.select_related('product').all()

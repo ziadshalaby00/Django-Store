@@ -15,7 +15,6 @@ class Order(models.Model):
         ('pending', 'Pending'),
         ("unpaid", "Unpaid"),
         ("paid", "Paid"),
-        ("unpayable", "Unpayable"),
         ('expired', 'Expired'),
     ]
 

@@ -235,7 +235,6 @@ CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 # maximum limits
 MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفوعة لكل مستخدم
 MAX_QTY_PER_ITEM = 15 # أقصى كمية لكل منتج في أي order
-MAX_PAYMENT_ATTEMPTS_PER_ORDER = 3 # أقصى عدد محاولات دفع للأوردر قبل إلغاؤه
 
 AVAILABLE_PAYMENT_METHODS = [
     ("COD", "Cash on Delivery"),
@@ -253,7 +252,10 @@ PAYMOB_PUBLIC_KEY = env("PAYMOB_PUBLIC_KEY")
 PAYMOB_HMAC_SECRET = env("PAYMOB_HMAC_SECRET")
 
 # expiration settings
-PAYMENT_LINK_LIFETIME_SECONDS = 1200  # 20 دقيقة
-SYSTEM_PAYMENT_EXPIRE_MINUTES = 30  # 30 دقيقة
-COD_ORDER_EXPIRE_DAYS = 4  # 4 أيام
-ORDER_EXPIRE_MINUTES = 30  # 30 دقيقة
+PAYMENT_LINK_LIFETIME_SECONDS = 600  # 10 دقيقة
+SYSTEM_PAYMENT_EXPIRE_MINUTES = 15  # 15 دقيقة
+
+ORDER_EXPIRE_MINUTES = 15  # 15 دقيقة
+COOLING_PERIOD_AFTER_EXPIRY = 10 # 10 دقيقة
+
+COD_ORDER_EXPIRE_DAYS = 3  # 3 أيام

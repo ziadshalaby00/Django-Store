@@ -51,20 +51,7 @@ class CreatePaymentView(APIView):
                 "message": "Payment window expired. You cannot pay this order anymore.",
                 "order_number": order.order_number
             }, status=status.HTTP_400_BAD_REQUEST)
-
-        # التحقق من عدد محاولات الدفع
-        payments = order.payments.all().count()
-        if payments >= settings.MAX_PAYMENT_ATTEMPTS_PER_ORDER:
-            order.payment_status = "unpayable"
-        order.save()
-        
-        # إذا كانت حالة الدفع "unpayable"
-        if order.payment_status == "unpayable":
-            return Response({
-                "message": "Payment attempts exceeded. You cannot pay this order.",
-                "order_number": order.order_number
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+ 
         # التحقق من وجود رابط دفع نشط
         active_payment_exists = order.payments.filter(
             status="pending",
@@ -77,6 +64,13 @@ class CreatePaymentView(APIView):
                 "payment_url": active_payment_exists.first().payment_url,
                 "order_number": order.order_number
             }, status=status.HTTP_200_OK)
+            
+        order_expired = order.created_at + timedelta(minutes=settings.ORDER_EXPIRE_MINUTES) < timezone.now()
+        if order_expired:
+            return Response({
+                "message": "This order has passed the allowed time to request payment links.",
+                "order_number": order.order_number
+            }, status=status.HTTP_400_BAD_REQUEST) 
 
         if order.payment_method.lower() == "epay":
             
