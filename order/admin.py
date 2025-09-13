@@ -5,7 +5,8 @@ from .models import Order, OrderItem, OrderAddress
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
-    readonly_fields = ("product", "quantity", "price_at_purchase", "subtotal_display")
+    fields = ("p_name", "quantity", "price_at_purchase", "subtotal_display")
+    readonly_fields = ("product", "p_name", "p_description", "p_image", "quantity", "price_at_purchase", "subtotal_display")
     extra = 0
 
     def subtotal_display(self, obj):
@@ -16,7 +17,7 @@ class OrderItemInline(admin.TabularInline):
 class OrderAdmin(admin.ModelAdmin):
     list_display = ("id", "order_number", "user", "total_price", "currency", "payment_status", "is_paid", "payment_method", "created_at")
     list_filter = ("payment_status", "payment_method", "created_at")
-    search_fields = ("user__username", "user__email", "order_number", "id")
+    search_fields = ("user__username", "user__email", "order_number", "id", "items__p_name")
     inlines = [OrderItemInline]
 
 @admin.register(OrderItem)

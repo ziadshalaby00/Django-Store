@@ -4,14 +4,22 @@ from .models import Review
 from django.contrib.auth import get_user_model
 User = get_user_model()
 
-class UserSerializer(serializers.ModelSerializer):
+from product.models import Product
+
+class MiniUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username']
+    
+class MiniProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'description', 'image']
 
 class ReviewSerializer(serializers.ModelSerializer):
-    user = UserSerializer(read_only=True)
-
+    user = MiniUserSerializer(read_only=True)
+    product = MiniProductSerializer(read_only=True)
+    
     class Meta:
         model = Review
-        fields = ['id', 'user', 'rating', 'comment', 'created_at']
+        fields = ['id', 'user', 'rating', 'comment', 'product', 'created_at']

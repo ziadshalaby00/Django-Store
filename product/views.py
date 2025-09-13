@@ -27,25 +27,9 @@ class ProductListView(APIView):
     """
 
     def get(self, request):
-        queryset = Product.objects.filter(is_active=True)
+        queryset = Product.objects.all()
 
-        # ---- Filters ----
-        category_id = request.query_params.get('category')
-        if category_id:
-            queryset = queryset.filter(category_id=category_id)
-
-        brand_id = request.query_params.get('brand')
-        if brand_id:
-            queryset = queryset.filter(brand_id=brand_id)
-
-        search_query = request.query_params.get('search')
-        if search_query:
-            queryset = queryset.filter(
-                Q(name__icontains=search_query) |
-                Q(description__icontains=search_query)
-            )
-
-        # Annotate price_after_discount (price * (1 - discount/100))
+        # ---- Annotate price_after_discount ----
         queryset = queryset.annotate(
             price_after_discount_value=ExpressionWrapper(
                 F("price") * (1 - F("discount_percentage") / 100.0),
@@ -53,14 +37,31 @@ class ProductListView(APIView):
             )
         )
 
-        # min_price & max_price
-        min_price = request.query_params.get('min_price')
-        if min_price:
-            queryset = queryset.filter(price_after_discount_value__gte=min_price)
+        # ---- Check if search exists ----
+        search_query = request.query_params.get('search')
+        if search_query:
+            # فقط فلترة بالبحث
+            queryset = queryset.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+        else:
+            # ---- Filters ----
+            category_id = request.query_params.get('category')
+            if category_id:
+                queryset = queryset.filter(category_id=category_id)
 
-        max_price = request.query_params.get('max_price')
-        if max_price:
-            queryset = queryset.filter(price_after_discount_value__lte=max_price)
+            brand_id = request.query_params.get('brand')
+            if brand_id:
+                queryset = queryset.filter(brand_id=brand_id)
+
+            min_price = request.query_params.get('min_price')
+            if min_price:
+                queryset = queryset.filter(price_after_discount_value__gte=min_price)
+
+            max_price = request.query_params.get('max_price')
+            if max_price:
+                queryset = queryset.filter(price_after_discount_value__lte=max_price)
 
         # ---- Ordering ----
         ordering = request.query_params.get('ordering')
@@ -79,7 +80,7 @@ class ProductListView(APIView):
 
 class ProductDetailView(APIView):
     def get(self, request, product_id):
-        product = get_object_or_404(Product, id=product_id, is_active=True)
+        product = get_object_or_404(Product, id=product_id)
         serializer = ProductDetailSerializer(product)
         return Response(serializer.data)
 

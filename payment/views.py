@@ -83,7 +83,21 @@ class CreatePaymentView(APIView):
             # إعداد بيانات Intention API
             paymob_secret_key = settings.PAYMOB_SECRET_KEY
             amount = int(order.total_price) * 100  # Paymob expects amount in cents/piasters
-        
+            
+            items = order.items.select_related("product").all()
+            missing_products = [
+                {"order_item_id": item.id, "p_name": item.p_name}
+                for item in items if not item.product
+            ]
+            if missing_products:
+                return Response(
+                    {
+                        "message": "Some products in this order do not exist.",
+                        "missing_products": missing_products
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             payload = {
                 "amount": amount,
                 "currency": order.currency,
@@ -92,9 +106,13 @@ class CreatePaymentView(APIView):
                     {
                         "name": item.product.name[:50],
                         "amount": int(item.price_at_purchase) * 100,
-                        "description": item.product.description[:255] if item.product.description else item.product.name[:255],
+                        "description":(
+                            item.product.description[:255]
+                            if item.product.description
+                            else item.product.name[:255]
+                        ),
                         "quantity": item.quantity
-                    } for item in order.items.all()
+                    } for item in items
                 ],
                 "billing_data": {
                     "first_name": order.shipping_address.full_name.split()[0],
@@ -121,7 +139,7 @@ class CreatePaymentView(APIView):
             if response.status_code != 201 and response.status_code != 200:
                 return Response(
                     {
-                        "error": "Failed to create payment intention",
+                        "message": "Failed to create payment intention",
                         "details": response.json()
                     }, status=status.HTTP_400_BAD_REQUEST)
             

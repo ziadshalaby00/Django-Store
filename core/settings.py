@@ -30,7 +30,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['2e15f00c8557.ngrok-free.app', '*']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
 	'rest_framework_simplejwt',
+    "django_cleanup.apps.CleanupConfig",
     'auth_app',
     "social_django",
     "product",

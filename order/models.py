@@ -99,7 +99,12 @@ class OrderAddress(models.Model):
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True)
+    product = models.ForeignKey(Product, on_delete=models.SET_NULL, null=True)
+    
+    p_name = models.CharField(max_length=200)
+    p_description = models.TextField(blank=True, null=True)
+    p_image = models.ImageField(upload_to='products/', null=True, blank=True)
+    
     quantity = models.PositiveIntegerField(default=1)
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 

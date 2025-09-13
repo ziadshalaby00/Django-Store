@@ -1,3 +1,4 @@
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -5,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from .models import Review
 from .serializers import ReviewSerializer
+from product.models import Product
 
 
 class ProductReviewAPIView(APIView):
@@ -16,12 +18,13 @@ class ProductReviewAPIView(APIView):
         return Response(serializer.data)
 
     def post(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
         if Review.objects.filter(product_id=product_id, user=request.user).exists():
             raise ValidationError({"detail": "You have already reviewed this product."})
 
         serializer = ReviewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user, product_id=product_id)
+        serializer.save(user=request.user, product=product)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def put(self, request, product_id):

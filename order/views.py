@@ -95,6 +95,9 @@ class CreateOrderAPIView(APIView):
                     order_items.append(OrderItem(
                         order=order,
                         product=product,
+                        p_name=product.name,
+                        p_description=product.description,
+                        p_image=product.image,
                         quantity=item.quantity,
                         price_at_purchase=product.price_after_discount
                     ))
