@@ -18,6 +18,13 @@ class MiniProductSerializer(serializers.ModelSerializer):
 
 class ReviewSerializer(serializers.ModelSerializer):
     user = MiniUserSerializer(read_only=True)
+    
+    class Meta:
+        model = Review
+        fields = ['id', 'user', 'rating', 'comment', 'product', 'created_at']
+    
+class UserReviewSerializer(serializers.ModelSerializer):
+    user = MiniUserSerializer(read_only=True)
     product = MiniProductSerializer(read_only=True)
     
     class Meta:

@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from .models import Product
-from reviews.serializers import ReviewSerializer
 
 class ProductSerializer(serializers.ModelSerializer):
     price_after_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
@@ -41,11 +40,10 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(ProductSerializer):
-    reviews = ReviewSerializer(many=True, read_only=True)
     sub_images = ProductImageSerializer(many=True, read_only=True)  # 👈 أضفنا الصور الإضافية
     
     class Meta(ProductSerializer.Meta):
-        fields = ProductSerializer.Meta.fields + ['reviews', 'sub_images']
+        fields = ProductSerializer.Meta.fields + ['sub_images']
 
 
 from rest_framework import serializers

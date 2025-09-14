@@ -30,7 +30,7 @@ class ProductImageInline(admin.TabularInline):  # أو StackedInline لو عاي
 class ProductAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'short_name', 'price', 'discount_percentage', 'price_after_discount',
-        'stock', 'brand', 'category', 'is_active', 'created_by', 'created_at'
+        'stock', 'is_active', 'created_by', 'brand', 'category', 'created_at'
     )
     list_filter = ('brand', 'category', 'is_active', 'created_at')
     search_fields = ('name', 'description')
