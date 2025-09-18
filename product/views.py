@@ -63,6 +63,14 @@ class ProductListView(APIView):
             if max_price:
                 queryset = queryset.filter(price_after_discount_value__lte=max_price)
 
+        # ---- Stock Filter ----
+        stock_filter = request.query_params.get('stock')
+        if stock_filter:
+            if stock_filter.lower() == 'in':
+                queryset = queryset.filter(stock__gt=0)
+            elif stock_filter.lower() == 'out':
+                queryset = queryset.filter(stock__lte=0)
+
         # ---- Ordering ----
         ordering = request.query_params.get('ordering')
         if ordering:
