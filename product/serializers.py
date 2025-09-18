@@ -4,7 +4,10 @@ from .models import Product
 class ProductSerializer(serializers.ModelSerializer):
     price_after_discount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     average_rating = serializers.SerializerMethodField()
-    
+
+    brand = serializers.SerializerMethodField()
+    category = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = [
@@ -24,12 +27,22 @@ class ProductSerializer(serializers.ModelSerializer):
             'updated_at',
         ]
         read_only_fields = fields
-    
+
     def get_average_rating(self, obj):
         reviews = obj.reviews.all()
         if reviews.exists():
             return round(sum([r.rating for r in reviews]) / reviews.count(), 1)
         return 0
+
+    def get_brand(self, obj):
+        if obj.brand:
+            return {"id": obj.brand.id, "name": obj.brand.name}
+        return None
+
+    def get_category(self, obj):
+        if obj.category:
+            return {"id": obj.category.id, "name": obj.category.name}
+        return None
 
 from .models import ProductImage
 
