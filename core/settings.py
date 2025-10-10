@@ -171,7 +171,7 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=15),   # مدة صلاحية الـ access token
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=15),   # مدة صلاحية الـ access token
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),      # مدة صلاحية الـ refresh token
     "ROTATE_REFRESH_TOKENS": False,                   # لو True، هيصدر refresh جديد مع كل refresh
     "BLACKLIST_AFTER_ROTATION": True,                 # لو بتستخدم blacklisting
@@ -193,7 +193,7 @@ AUTHENTICATION_BACKENDS = (
 
 
 SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env("GOOGLE_CLIENT_ID")
-
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env("GOOGLE_CLIENT_SECRET")
 
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = [
@@ -259,3 +259,10 @@ ORDER_EXPIRE_MINUTES = 15  # 15 دقيقة
 COOLING_PERIOD_AFTER_EXPIRY = 10 # 10 دقيقة
 
 COD_ORDER_EXPIRE_DAYS = 3  # 3 أيام
+
+
+SAMESITE = 'None'
+HTTPONLY = True
+SECURE = True
+ACCESS_MAX_AGE = SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME')
+REFRESH_MAX_AGE = SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME')

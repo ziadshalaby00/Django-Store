@@ -7,6 +7,7 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from .serializers import UserRegisterSerializer
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 User = get_user_model()
 
@@ -19,7 +20,7 @@ class RegisterView(APIView):
         if serializer.is_valid():
             user = serializer.save()
             return Response(
-                {"message": "User registered successfully", "user": serializer.data},
+                {"message": "User registered successfully"},
                 status=status.HTTP_201_CREATED,
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -39,24 +40,26 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         refresh = data.get("refresh")
 
         # نرجع response جديد (من غير التوكينات في body)
-        res = Response({"message": "Login successful"})
+        res = Response({"message": "Loggedin successfully"})
 
         # نحط التوكينات في cookies
         if access:
             res.set_cookie(
                 key="access",
                 value=access,
-                httponly=True,
-                secure=True,      # في production لازم يكون عندك HTTPS
-                samesite="Strict" # ممكن تخليها "Lax" حسب احتياجك
+                httponly=settings.HTTPONLY,
+                secure=settings.SECURE,
+                samesite=settings.SAMESITE,
+                max_age=settings.ACCESS_MAX_AGE,
             )
         if refresh:
             res.set_cookie(
                 key="refresh",
                 value=refresh,
-                httponly=True,
-                secure=True,
-                samesite="Strict"
+                httponly=settings.HTTPONLY,
+                secure=settings.SECURE,
+                samesite=settings.SAMESITE,
+                max_age=settings.REFRESH_MAX_AGE,
             )
 
         return res
@@ -86,9 +89,10 @@ class CookieTokenRefreshView(TokenRefreshView):
         res.set_cookie(
             key="access",
             value=access,
-            httponly=True,
-            secure=True,
-            samesite="Strict"
+            httponly=settings.HTTPONLY,
+            secure=settings.SECURE,
+            samesite=settings.SAMESITE,
+            max_age=settings.ACCESS_MAX_AGE,
         )
 
         return res
@@ -127,25 +131,43 @@ class CookieTokenVerifyView(TokenVerifyView):
                 {"message": str(e)},
                 status=status.HTTP_401_UNAUTHORIZED,
             )
-            
-            
-from google.oauth2 import id_token
-from google.auth.transport import requests
+
+import requests
 from rest_framework_simplejwt.tokens import RefreshToken
-from google.auth.transport import requests as google_requests
-from django.conf import settings
 
 class GoogleLoginView(APIView):
     def post(self, request):
-        google_token = request.data.get("token")
+        code = request.data.get("code")
+        if not code:
+            return Response({"error": "No Google code provided"}, status=400)
 
-        if not google_token:
-            return Response({"error": "No Google token provided"}, status=400)
+         # تبادل الكود مع Google
+        token_url = "https://oauth2.googleapis.com/token"
+        data = {
+            "code": code,
+            "client_id": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
+            "client_secret": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
+            "redirect_uri": "postmessage",  # مهم جداً عند استخدام popup
+            "grant_type": "authorization_code",
+        }
+
+        r = requests.post(token_url, data=data)
+        if r.status_code != 200:
+            return Response({"error": "Failed to exchange code"}, status=400)
+
+        tokens = r.json()
+        id_token_value = tokens.get("id_token")
+
+        if not id_token_value:
+            return Response({"error": "No id_token in response"}, status=400)
+
+        from google.oauth2 import id_token
+        from google.auth.transport import requests as google_requests
 
         try:
             # تحقق من التوكين مع Google
             idinfo = id_token.verify_oauth2_token(
-                google_token, google_requests.Request(), settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
+                id_token_value, google_requests.Request(), settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
             )
             email = idinfo.get("email")
             fullname = idinfo.get("name")
@@ -160,30 +182,31 @@ class GoogleLoginView(APIView):
             # إصدار JWT
             refresh = RefreshToken.for_user(user)
             response = Response(
-                {"message": "Login successful with Google"},
+                {"message": "Successfully logged in with Google"},
                 status=status.HTTP_200_OK,
             )
             
             response.set_cookie(
                 key="access",
                 value=str(refresh.access_token),
-                httponly=True,
-                secure=True,
-                samesite="Strict"
+                httponly=settings.HTTPONLY,
+                secure=settings.SECURE,
+                samesite=settings.SAMESITE,
+                max_age=settings.ACCESS_MAX_AGE,
             )
             response.set_cookie(
                 key="refresh",
                 value=str(refresh),
-                httponly=True,
-                secure=True,
-                samesite="Strict"
+                httponly=settings.HTTPONLY,
+                secure=settings.SECURE,
+                samesite=settings.SAMESITE,
+                max_age=settings.REFRESH_MAX_AGE,
             )
 
             return response
         
         except Exception:
             return Response({"error": "Invalid Google token"}, status=400)
-
 
 from .serializers import PasswordResetRequestSerializer, PasswordResetConfirmSerializer
 from django.utils.http import urlsafe_base64_encode
@@ -196,7 +219,6 @@ class PasswordResetConfirmView(APIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
-
 
 from django.core.mail import send_mail
 
@@ -220,7 +242,6 @@ class PasswordResetRequestView(APIView):
 
         return Response({"message": "Password reset link sent to your email."}, status=status.HTTP_200_OK)
 
-
 from rest_framework.permissions import IsAuthenticated
 from .serializers import UserUpdateSerializer
 
@@ -233,18 +254,27 @@ class UserUpdateView(APIView):
         serializer.save()
         return Response({"message": "User updated successfully"}, status=status.HTTP_200_OK)
 
-
 class LogoutView(APIView):
     def post(self, request):
         response = Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         
         # حذف الكوكيز
-        response.delete_cookie("access")
-        response.delete_cookie("refresh")
+        response.set_cookie(
+            key="access",
+            value='',
+            httponly=settings.HTTPONLY,
+            secure=settings.SECURE,
+            samesite=settings.SAMESITE,
+        )
+        response.set_cookie(
+            key="refresh",
+            value='',
+            httponly=settings.HTTPONLY,
+            secure=settings.SECURE,
+            samesite=settings.SAMESITE,
+        )
         
         return response
-    
-    
 
 class DeleteUserView(APIView):
     permission_classes = [IsAuthenticated]
