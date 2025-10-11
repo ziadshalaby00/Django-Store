@@ -171,7 +171,7 @@ REST_FRAMEWORK = {
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(days=15),   # مدة صلاحية الـ access token
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),   # مدة صلاحية الـ access token
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),      # مدة صلاحية الـ refresh token
     "ROTATE_REFRESH_TOKENS": False,                   # لو True، هيصدر refresh جديد مع كل refresh
     "BLACKLIST_AFTER_ROTATION": True,                 # لو بتستخدم blacklisting
