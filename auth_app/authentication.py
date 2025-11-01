@@ -8,3 +8,13 @@ class CookieJWTAuthentication(JWTAuthentication):
 
         request.META['HTTP_AUTHORIZATION'] = f'Bearer {access_token}'
         return super().authenticate(request)
+
+'''_core/settings.py_
+
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "auth_app.authentication.CookieJWTAuthentication",
+    )
+}
+
+'''

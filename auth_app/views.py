@@ -141,13 +141,12 @@ class GoogleLoginView(APIView):
         if not code:
             return Response({"error": "No Google code provided"}, status=400)
 
-         # تبادل الكود مع Google
         token_url = "https://oauth2.googleapis.com/token"
         data = {
             "code": code,
             "client_id": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY,
             "client_secret": settings.SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET,
-            "redirect_uri": "postmessage",  # مهم جداً عند استخدام popup
+            "redirect_uri": "postmessage",
             "grant_type": "authorization_code",
         }
 
@@ -165,7 +164,6 @@ class GoogleLoginView(APIView):
         from google.auth.transport import requests as google_requests
 
         try:
-            # تحقق من التوكين مع Google
             idinfo = id_token.verify_oauth2_token(
                 id_token_value, google_requests.Request(), settings.SOCIAL_AUTH_GOOGLE_OAUTH2_KEY
             )
@@ -173,13 +171,11 @@ class GoogleLoginView(APIView):
             fullname = idinfo.get("name")
             username = email.split("@")[0]
 
-            # إنشاء أو جلب المستخدم
             user, created = User.objects.get_or_create(
                 email=email,
                 defaults={"username": username, "fullname": fullname},
             )
-
-            # إصدار JWT
+                
             refresh = RefreshToken.for_user(user)
             response = Response(
                 {"message": "Successfully logged in with Google"},
@@ -295,9 +291,21 @@ class DeleteUserView(APIView):
 
         # حذف الكوكيز
         response = Response({"message": "User account deleted successfully"}, status=status.HTTP_200_OK)
-        response.delete_cookie("access")
-        response.delete_cookie("refresh")
-
+        response.set_cookie(
+            key="access",
+            value='',
+            httponly=settings.HTTPONLY,
+            secure=settings.SECURE,
+            samesite=settings.SAMESITE,
+        )
+        response.set_cookie(
+            key="refresh",
+            value='',
+            httponly=settings.HTTPONLY,
+            secure=settings.SECURE,
+            samesite=settings.SAMESITE,
+        )
+        
         return response
 
 from rest_framework.generics import RetrieveAPIView
