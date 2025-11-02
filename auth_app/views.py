@@ -1,14 +1,40 @@
-from django.shortcuts import render
-
-# Create your views here.
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
-from .serializers import UserRegisterSerializer
-from django.contrib.auth import get_user_model
-from django.conf import settings
 
+from rest_framework.permissions import AllowAny
+from django.conf import settings
+from rest_framework.generics import RetrieveAPIView
+
+from .serializers import UserRegisterSerializer, UserSerializer
+
+import requests
+from rest_framework_simplejwt.tokens import RefreshToken
+
+from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from rest_framework_simplejwt.views import TokenRefreshView
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+
+from rest_framework_simplejwt.views import TokenVerifyView
+from rest_framework_simplejwt.serializers import TokenVerifySerializer
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
+
+from .serializers import SendPasswordResetLinkSerializer, PasswordResetConfirmSerializer
+from django.utils.http import urlsafe_base64_encode
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from .utilities import clear_auth_cookies, set_jwt_cookie, specific_send_mail
+
+from rest_framework.permissions import IsAuthenticated
+from .serializers import UserUpdateSerializer
+
+# views.py
+from rest_framework.decorators import api_view
+from django.views.decorators.csrf import ensure_csrf_cookie
+
+from django.contrib.auth import get_user_model
 User = get_user_model()
 
 
@@ -25,11 +51,7 @@ class RegisterView(APIView):
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-from rest_framework_simplejwt.views import TokenObtainPairView
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-
-class CookieTokenObtainPairView(TokenObtainPairView):
+class CookieTokenObtainPairView(TokenObtainPairView): # Login
     serializer_class = TokenObtainPairSerializer
 
     def post(self, request, *args, **kwargs):
@@ -39,42 +61,20 @@ class CookieTokenObtainPairView(TokenObtainPairView):
         access = data.get("access")
         refresh = data.get("refresh")
 
-        # نرجع response جديد (من غير التوكينات في body)
         res = Response({"message": "Loggedin successfully"})
 
-        # نحط التوكينات في cookies
         if access:
-            res.set_cookie(
-                key="access",
-                value=access,
-                httponly=settings.HTTPONLY,
-                secure=settings.SECURE,
-                samesite=settings.SAMESITE,
-                max_age=settings.ACCESS_MAX_AGE,
-                path=settings.COOKIE_PATH
-            )
+            res = set_jwt_cookie(res, "access", access, settings.ACCESS_MAX_AGE)
+            
         if refresh:
-            res.set_cookie(
-                key="refresh",
-                value=refresh,
-                httponly=settings.HTTPONLY,
-                secure=settings.SECURE,
-                samesite=settings.SAMESITE,
-                max_age=settings.REFRESH_MAX_AGE,
-                path=settings.COOKIE_PATH
-            )
+            res = set_jwt_cookie(res, "refresh", refresh, settings.REFRESH_MAX_AGE)
 
         return res
     
-    
-from rest_framework_simplejwt.views import TokenRefreshView
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-
-class CookieTokenRefreshView(TokenRefreshView):
+class CookieTokenRefreshView(TokenRefreshView): # Refresh
     serializer_class = TokenRefreshSerializer
 
     def post(self, request, *args, **kwargs):
-        # ناخد refresh من الكوكي
         refresh_token = request.COOKIES.get("refresh")
 
         if refresh_token is None:
@@ -84,27 +84,16 @@ class CookieTokenRefreshView(TokenRefreshView):
         serializer.is_valid(raise_exception=True)
 
         access = serializer.validated_data["access"]
+        refresh = serializer.validated_data["refresh"]
 
         res = Response({"message": "Access token refreshed"})
 
-        # نخزن access الجديد في الكوكي
-        res.set_cookie(
-            key="access",
-            value=access,
-            httponly=settings.HTTPONLY,
-            secure=settings.SECURE,
-            samesite=settings.SAMESITE,
-            max_age=settings.ACCESS_MAX_AGE,
-            path=settings.COOKIE_PATH
-        )
-
+        res = set_jwt_cookie(res, "access", access, settings.ACCESS_MAX_AGE)
+        res = set_jwt_cookie(res, "refresh", refresh, settings.REFRESH_MAX_AGE)
+        
         return res
 
-from rest_framework_simplejwt.views import TokenVerifyView
-from rest_framework_simplejwt.serializers import TokenVerifySerializer
-from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
-
-class CookieTokenVerifyView(TokenVerifyView):
+class CookieTokenVerifyView(TokenVerifyView): # Verfivy Token
     serializer_class = TokenVerifySerializer
 
     def post(self, request, *args, **kwargs):
@@ -135,10 +124,7 @@ class CookieTokenVerifyView(TokenVerifyView):
                 status=status.HTTP_401_UNAUTHORIZED,
             )
 
-import requests
-from rest_framework_simplejwt.tokens import RefreshToken
-
-class GoogleLoginView(APIView):
+class GoogleLoginView(APIView): # Google Login
     def post(self, request):
         code = request.data.get("code")
         if not code:
@@ -185,46 +171,17 @@ class GoogleLoginView(APIView):
                 status=status.HTTP_200_OK,
             )
             
-            response.set_cookie(
-                key="access",
-                value=str(refresh.access_token),
-                httponly=settings.HTTPONLY,
-                secure=settings.SECURE,
-                samesite=settings.SAMESITE,
-                max_age=settings.ACCESS_MAX_AGE,
-                path=settings.COOKIE_PATH
-            )
-            response.set_cookie(
-                key="refresh",
-                value=str(refresh),
-                httponly=settings.HTTPONLY,
-                secure=settings.SECURE,
-                samesite=settings.SAMESITE,
-                max_age=settings.REFRESH_MAX_AGE,
-                path=settings.COOKIE_PATH
-            )
+            response = set_jwt_cookie(response, "access", str(refresh.access_token), settings.ACCESS_MAX_AGE)
+            response = set_jwt_cookie(response, "refresh", str(refresh), settings.REFRESH_MAX_AGE)
 
             return response
         
         except Exception:
             return Response({"error": "Invalid Google token"}, status=400)
 
-from .serializers import SendPasswordResetLinkViewSerializer, PasswordResetConfirmSerializer
-from django.utils.http import urlsafe_base64_encode
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.encoding import force_bytes
-from .utilities import specific_send_mail
-
-class PasswordResetConfirmView(APIView):
+class SendPasswordResetLinkView(APIView): # Forgot Password
     def post(self, request):
-        serializer = PasswordResetConfirmSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
-
-class SendPasswordResetLinkView(APIView):
-    def post(self, request):
-        serializer = SendPasswordResetLinkViewSerializer(data=request.data)
+        serializer = SendPasswordResetLinkSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
         user = User.objects.get(email=email)
@@ -243,10 +200,14 @@ class SendPasswordResetLinkView(APIView):
 
         return Response({"message": "Password reset link sent to your email."}, status=status.HTTP_200_OK)
 
-from rest_framework.permissions import IsAuthenticated
-from .serializers import UserUpdateSerializer
+class PasswordResetConfirmView(APIView): # Reset Password
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
 
-class UserUpdateView(APIView):
+class UserUpdateView(APIView): # Update User
     permission_classes = [IsAuthenticated]
 
     def put(self, request):
@@ -255,23 +216,14 @@ class UserUpdateView(APIView):
         serializer.save()
         return Response({"message": "User updated successfully"}, status=status.HTTP_200_OK)
 
-class LogoutView(APIView):
+class LogoutView(APIView): # Logut
     def post(self, request):
         response = Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         
-        # حذف الكوكيز
-        response.delete_cookie(
-            key='access',
-            path=settings.COOKIE_PATH
-        )
-        response.delete_cookie(
-            key='refresh',
-            path=settings.COOKIE_PATH
-        )
-        
+        response = clear_auth_cookies(response)
         return response
 
-class DeleteUserView(APIView):
+class DeleteUserView(APIView): # Delete User
     permission_classes = [IsAuthenticated]
 
     def delete(self, request):
@@ -281,32 +233,27 @@ class DeleteUserView(APIView):
         if not password:
             return Response({"error": "Password is required to delete account"}, status=status.HTTP_400_BAD_REQUEST)
 
-        # تحقق من الباسوورد
         if not user.check_password(password):
             return Response({"error": "Incorrect password"}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # حذف المستخدم
         user.delete()
 
-        # حذف الكوكيز
         response = Response({"message": "User account deleted successfully"}, status=status.HTTP_200_OK)
-        response.delete_cookie(
-            key='access',
-            path=settings.COOKIE_PATH
-        )
-        response.delete_cookie(
-            key='refresh',
-            path=settings.COOKIE_PATH
-        )
-        
+        response = clear_auth_cookies(response)
+
         return response
 
-from rest_framework.generics import RetrieveAPIView
-from .serializers import UserSerializer
-
-class UserProfileView(RetrieveAPIView):
+class UserProfileView(RetrieveAPIView): # Me
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+@api_view(["GET"])
+@ensure_csrf_cookie
+def get_csrf(request): # Csrf Token
+    """
+    Call this once on app load to ensure csrftoken cookie is set.
+    """
+    return Response({"detail": "CSRF cookie set"})

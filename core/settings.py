@@ -59,6 +59,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "auth_app.authentication.CSRFMiddlewareWithJWT",
     "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -173,7 +174,7 @@ from datetime import timedelta
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),   # مدة صلاحية الـ access token
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),      # مدة صلاحية الـ refresh token
-    "ROTATE_REFRESH_TOKENS": False,                   # لو True، هيصدر refresh جديد مع كل refresh
+    "ROTATE_REFRESH_TOKENS": True,                    # لو True، هيصدر refresh جديد مع كل refresh
     "BLACKLIST_AFTER_ROTATION": True,                 # لو بتستخدم blacklisting
     "ALGORITHM": "HS256",                             # خوارزمية التوقيع
     "SIGNING_KEY": SECRET_KEY,                        # المفتاح السري (Secret Key)
@@ -260,10 +261,26 @@ COOLING_PERIOD_AFTER_EXPIRY = 10 # 10 دقيقة
 
 COD_ORDER_EXPIRE_DAYS = 3  # 3 أيام
 
-
+# Jwt Cookies
 SAMESITE = 'None'
 HTTPONLY = True
 SECURE = True
 ACCESS_MAX_AGE = SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME')
 REFRESH_MAX_AGE = SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME')
 COOKIE_PATH = '/'
+
+# CSRF
+CSRF_COOKIE_NAME = "csrftoken"        # الاسم الافتراضي
+CSRF_COOKIE_SECURE = True             # فقط HTTPS في production
+CSRF_COOKIE_HTTPONLY = False          # لازم يكون False عشان JS يقدر يقرأ الكوكي
+CSRF_COOKIE_SAMESITE = "Lax"          # أو "Strict" حسب حاجتك
+CSRF_TRUSTED_ORIGINS = [
+    "https://yourfrontend.com",       # دومين الواجهة الأمامية
+]
+
+import re
+
+CSRF_EXEMPT_URL_PATTERNS = [
+    # /api/reviews/products/8/reviews/
+    # re.compile(r"^/api/reviews/products/\d+/reviews/?$"),
+]

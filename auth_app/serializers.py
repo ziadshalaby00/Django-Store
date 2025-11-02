@@ -29,7 +29,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
 
 
 
-class SendPasswordResetLinkViewSerializer(serializers.Serializer):
+class SendPasswordResetLinkSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
     def validate_email(self, value):
