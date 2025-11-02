@@ -5,8 +5,8 @@ from .views import (
     CookieTokenRefreshView,
     CookieTokenVerifyView,
     GoogleLoginView,
-    PasswordResetRequestView,
     PasswordResetConfirmView,
+    SendPasswordResetLinkView,
     UserUpdateView,
     LogoutView,
     DeleteUserView,
@@ -22,7 +22,7 @@ urlpatterns = [
     
     path("google-login/", GoogleLoginView.as_view(), name="google_login"),
     
-    path("password-reset/", PasswordResetRequestView.as_view(), name="password_reset"),
+    path("password-reset-link/", SendPasswordResetLinkView.as_view(), name="password_reset"),
     path("password-reset-confirm/", PasswordResetConfirmView.as_view(), name="password_reset_confirm"),
     
     path("update-profile/", UserUpdateView.as_view(), name="update_profile"),

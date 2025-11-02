@@ -18,7 +18,7 @@ class RegisterView(APIView):
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
+            serializer.save()
             return Response(
                 {"message": "User registered successfully"},
                 status=status.HTTP_201_CREATED,
@@ -51,6 +51,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                 secure=settings.SECURE,
                 samesite=settings.SAMESITE,
                 max_age=settings.ACCESS_MAX_AGE,
+                path=settings.COOKIE_PATH
             )
         if refresh:
             res.set_cookie(
@@ -60,6 +61,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                 secure=settings.SECURE,
                 samesite=settings.SAMESITE,
                 max_age=settings.REFRESH_MAX_AGE,
+                path=settings.COOKIE_PATH
             )
 
         return res
@@ -93,6 +95,7 @@ class CookieTokenRefreshView(TokenRefreshView):
             secure=settings.SECURE,
             samesite=settings.SAMESITE,
             max_age=settings.ACCESS_MAX_AGE,
+            path=settings.COOKIE_PATH
         )
 
         return res
@@ -189,6 +192,7 @@ class GoogleLoginView(APIView):
                 secure=settings.SECURE,
                 samesite=settings.SAMESITE,
                 max_age=settings.ACCESS_MAX_AGE,
+                path=settings.COOKIE_PATH
             )
             response.set_cookie(
                 key="refresh",
@@ -197,6 +201,7 @@ class GoogleLoginView(APIView):
                 secure=settings.SECURE,
                 samesite=settings.SAMESITE,
                 max_age=settings.REFRESH_MAX_AGE,
+                path=settings.COOKIE_PATH
             )
 
             return response
@@ -204,10 +209,11 @@ class GoogleLoginView(APIView):
         except Exception:
             return Response({"error": "Invalid Google token"}, status=400)
 
-from .serializers import PasswordResetRequestSerializer, PasswordResetConfirmSerializer
+from .serializers import SendPasswordResetLinkViewSerializer, PasswordResetConfirmSerializer
 from django.utils.http import urlsafe_base64_encode
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_bytes
+from .utilities import specific_send_mail
 
 class PasswordResetConfirmView(APIView):
     def post(self, request):
@@ -216,11 +222,9 @@ class PasswordResetConfirmView(APIView):
         serializer.save()
         return Response({"message": "Password has been reset successfully."}, status=status.HTTP_200_OK)
 
-from django.core.mail import send_mail
-
-class PasswordResetRequestView(APIView):
+class SendPasswordResetLinkView(APIView):
     def post(self, request):
-        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer = SendPasswordResetLinkViewSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
         user = User.objects.get(email=email)
@@ -229,9 +233,10 @@ class PasswordResetRequestView(APIView):
         token = default_token_generator.make_token(user)
         reset_url = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
 
-        send_mail(
+        specific_send_mail(
             subject="Password Reset Request",
-            message=f"Click the link to reset your password: {reset_url}",
+            message=f"Click the link to reset your password",
+            link=reset_url,
             from_email=None,
             recipient_list=[email],
         )
@@ -255,19 +260,13 @@ class LogoutView(APIView):
         response = Response({"message": "Logged out successfully"}, status=status.HTTP_200_OK)
         
         # حذف الكوكيز
-        response.set_cookie(
-            key="access",
-            value='',
-            httponly=settings.HTTPONLY,
-            secure=settings.SECURE,
-            samesite=settings.SAMESITE,
+        response.delete_cookie(
+            key='access',
+            path=settings.COOKIE_PATH
         )
-        response.set_cookie(
-            key="refresh",
-            value='',
-            httponly=settings.HTTPONLY,
-            secure=settings.SECURE,
-            samesite=settings.SAMESITE,
+        response.delete_cookie(
+            key='refresh',
+            path=settings.COOKIE_PATH
         )
         
         return response
@@ -291,19 +290,13 @@ class DeleteUserView(APIView):
 
         # حذف الكوكيز
         response = Response({"message": "User account deleted successfully"}, status=status.HTTP_200_OK)
-        response.set_cookie(
-            key="access",
-            value='',
-            httponly=settings.HTTPONLY,
-            secure=settings.SECURE,
-            samesite=settings.SAMESITE,
+        response.delete_cookie(
+            key='access',
+            path=settings.COOKIE_PATH
         )
-        response.set_cookie(
-            key="refresh",
-            value='',
-            httponly=settings.HTTPONLY,
-            secure=settings.SECURE,
-            samesite=settings.SAMESITE,
+        response.delete_cookie(
+            key='refresh',
+            path=settings.COOKIE_PATH
         )
         
         return response
