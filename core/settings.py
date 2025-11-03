@@ -281,6 +281,19 @@ CSRF_TRUSTED_ORIGINS = [
 import re
 
 CSRF_EXEMPT_URL_PATTERNS = [
-    # /api/reviews/products/8/reviews/
-    # re.compile(r"^/api/reviews/products/\d+/reviews/?$"),
+    # Payment
+    re.compile(r"^/api/payment/paymob-callback/?$"),
+    
+    # Auth
+    re.compile(r"^/api/auth/register/?$"),
+    re.compile(r"^/api/auth/login/?$"),
+    re.compile(r"^/api/auth/google-login/?$"),
+    
+    re.compile(r"^/api/auth/token/refresh/?$"),
+    re.compile(r"^/api/auth/token/verify/?$"),
+    
+    re.compile(r"^/api/auth/password-reset-link/?$"),
+    re.compile(r"^/api/auth/password-reset-confirm/?$"),
+    
+    re.compile(r"^/api/auth/logout/?$"),
 ]

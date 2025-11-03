@@ -35,3 +35,4 @@ urlpatterns = [
     path("me/", UserProfileView.as_view(), name="user-profile"),
     path("delete-user/", DeleteUserView.as_view(), name="delete_user"),
 ]
+
