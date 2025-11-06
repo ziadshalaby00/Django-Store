@@ -86,7 +86,7 @@ class CookieTokenRefreshView(TokenRefreshView): # Refresh
         access = serializer.validated_data["access"]
         refresh = serializer.validated_data["refresh"]
 
-        res = Response({"message": "Access token refreshed"})
+        res = Response({"message": "Access and refresh tokens refreshed"})
 
         res = set_jwt_cookie(res, "access", access, settings.ACCESS_MAX_AGE)
         res = set_jwt_cookie(res, "refresh", refresh, settings.REFRESH_MAX_AGE)
