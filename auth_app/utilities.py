@@ -17,6 +17,7 @@ def set_jwt_cookie(response, key, value, max_age):
 def clear_auth_cookies(response):
     response.delete_cookie("access", path=settings.COOKIE_PATH)
     response.delete_cookie("refresh", path=settings.COOKIE_PATH)
+    response.delete_cookie("csrftoken", path=settings.COOKIE_PATH)
     return response
 
 

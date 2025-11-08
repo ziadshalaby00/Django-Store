@@ -42,6 +42,6 @@ class CustomUserAdmin(UserAdmin):
 
 from django.contrib import admin
 
-admin.site.site_header = "Ziad Admin"      # العنوان اللي في الأعلى
-admin.site.site_title = "Ziad Admin Portal" # العنوان في تبويب المتصفح
+admin.site.site_header = "Proton Admin"      # العنوان اللي في الأعلى
+admin.site.site_title = "Proton Admin Portal" # العنوان في تبويب المتصفح
 admin.site.index_title = "Welcome to Ziad Admin Dashboard"  # النص في الصفحة الرئيسية
