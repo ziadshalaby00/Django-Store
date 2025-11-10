@@ -53,7 +53,7 @@ class ProductImageSerializer(serializers.ModelSerializer):
 
 
 class ProductDetailSerializer(ProductSerializer):
-    sub_images = ProductImageSerializer(many=True, read_only=True)  # 👈 أضفنا الصور الإضافية
+    sub_images = ProductImageSerializer(many=True, read_only=True)
     
     class Meta(ProductSerializer.Meta):
         fields = ProductSerializer.Meta.fields + ['sub_images']
