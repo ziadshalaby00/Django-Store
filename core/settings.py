@@ -212,9 +212,9 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.gmail.com"  # أو أي سيرفر بريد
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'shalabyziad94@gmail.com'
-EMAIL_HOST_PASSWORD = 'havw dorh yzet qfxd'
-DEFAULT_FROM_EMAIL = "shalabyziad94@gmail.com"
+EMAIL_HOST_USER = ''
+EMAIL_HOST_PASSWORD = ''
+DEFAULT_FROM_EMAIL = ""
 
 FRONTEND_URL = "http://localhost:4200"
 
