@@ -51,3 +51,13 @@ A full-featured e-commerce REST API built with Django. Supports product catalogi
 - Custom admin dashboard
 - Collapsible filters
 - User statistics
+
+---
+
+## 📄 License
+
+Developed entirely by [Ziad Shalaby](https://github.com/ziadshalaby00).
+
+This project is licensed under the **MIT License**.
+
+---
