@@ -2,6 +2,11 @@
 
 A full-featured e-commerce REST API built with Django. Supports product cataloging, shopping cart, order management, Paymob payments, JWT authentication with cookies, and Google OAuth.
 
+<img width="32%" alt="image 1" src="https://github.com/user-attachments/assets/b0492c51-20e7-4776-b902-1e6c09195a84" />
+<img width="32%" alt="image 2" src="https://github.com/user-attachments/assets/4cb7d514-c6d7-4bc6-b211-8d065d96b2ae" />
+<img width="32%" alt="image 3" src="https://github.com/user-attachments/assets/21687970-9009-47ea-9c95-61ec4faa4d29" />
+
+
 ## 🛠️ Tech Stack
 
 - **Backend:** Django 5.2, Django REST Framework
