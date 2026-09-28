@@ -7,7 +7,7 @@ from .models import User
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    # نعدل على fieldsets بالكامل بدل + 
+
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         ("Personal info", {"fields": ("fullname", "email", "first_name", "last_name")}),
@@ -42,6 +42,6 @@ class CustomUserAdmin(UserAdmin):
 
 from django.contrib import admin
 
-admin.site.site_header = "Proton Admin"      # العنوان اللي في الأعلى
-admin.site.site_title = "Proton Admin Portal" # العنوان في تبويب المتصفح
-admin.site.index_title = "Welcome to Ziad Admin Dashboard"  # النص في الصفحة الرئيسية
+admin.site.site_header = "Proton Admin"    
+admin.site.site_title = "Proton Admin Portal" 
+admin.site.index_title = "Welcome to Ziad Admin Dashboard" 

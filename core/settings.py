@@ -75,7 +75,7 @@ ROOT_URLCONF = 'core.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / "templates"],  # لازم يكون المجلد اللي فيه base_site.html
+        'DIRS': [BASE_DIR / "templates"], 
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -96,19 +96,19 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # DATABASES = {
 #     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
+#         'ENGINE': 'django.db.backends.postgresql_psycopg2',
+#         'NAME': env("DB_NAME"),
+#         'USER': env("DB_USER"),
+#         'PASSWORD': env("DB_PASSWORD"),
+#         'HOST': env("DB_HOST"),
+#         'PORT': env("DB_PORT"),
 #     }
 # }
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': env("DB_NAME"),
-        'USER': env("DB_USER"),
-        'PASSWORD': env("DB_PASSWORD"),
-        'HOST': env("DB_HOST"),
-        'PORT': env("DB_PORT"),
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -165,21 +165,21 @@ REST_FRAMEWORK = {
         "auth_app.authentication.CookieJWTAuthentication",
     ),
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,  # عدد المنتجات لكل صفحة
+    'PAGE_SIZE': 10, 
 }
 
 
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),   # مدة صلاحية الـ access token
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),      # مدة صلاحية الـ refresh token
-    "ROTATE_REFRESH_TOKENS": True,                    # لو True، هيصدر refresh جديد مع كل refresh
-    "BLACKLIST_AFTER_ROTATION": True,                 # لو بتستخدم blacklisting
-    "ALGORITHM": "HS256",                             # خوارزمية التوقيع
-    "SIGNING_KEY": SECRET_KEY,                        # المفتاح السري (Secret Key)
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12), 
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),   
+    "ROTATE_REFRESH_TOKENS": True,                 
+    "BLACKLIST_AFTER_ROTATION": True,             
+    "ALGORITHM": "HS256",                          
+    "SIGNING_KEY": SECRET_KEY,                   
     "VERIFYING_KEY": None,
-    "AUTH_HEADER_TYPES": ("Bearer",),                 # شكل الهيدر: Authorization: Bearer <token>
+    "AUTH_HEADER_TYPES": ("Bearer",),            
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",
@@ -197,19 +197,19 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = env("GOOGLE_CLIENT_ID")
 SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env("GOOGLE_CLIENT_SECRET")
 
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:4200",
-    "http://127.0.0.1:4200",
-    'http://127.0.0.1:5500',
-]
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
-    'http://127.0.0.1:5500',
+    "http://localhost:8000",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:4200",
+    "http://127.0.0.1:4200",
 ]
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = "smtp.gmail.com"  # أو أي سيرفر بريد
+EMAIL_HOST = "smtp.gmail.com" 
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = ''
@@ -218,24 +218,23 @@ DEFAULT_FROM_EMAIL = ""
 
 FRONTEND_URL = "http://localhost:4200"
 
-SECURE_BROWSER_XSS_FILTER = True  # منع هجمات XSS
-SECURE_CONTENT_TYPE_NOSNIFF = True  # منع التحميل غير الآمن للملفات
-# SECURE_SSL_REDIRECT = True  # إجبار الموقع على HTTPS
-X_FRAME_OPTIONS = "DENY"  # منع تضمين الموقع في iframes لتجنب Clickjacking
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True 
+# SECURE_SSL_REDIRECT = True  
+X_FRAME_OPTIONS = "DENY"  
 
 
 import os
 
-# المسار الأساسي للميديا داخل المشروع
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-CELERY_BROKER_URL = "redis://localhost:6379/0"  # مثال لو تستخدم Redis
+CELERY_BROKER_URL = "redis://localhost:6379/0" 
 CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
 
 # maximum limits
-MAX_UNPAID_ORDERS_PER_USER = 3 # أقصى عدد أوردرات غير مدفوعة لكل مستخدم
-MAX_QTY_PER_ITEM = 15 # أقصى كمية لكل منتج في أي order
+MAX_UNPAID_ORDERS_PER_USER = 3 
+MAX_QTY_PER_ITEM = 15
 
 AVAILABLE_PAYMENT_METHODS = [
     ("COD", "Cash on Delivery"),
@@ -246,36 +245,36 @@ PAYMOB_PAYMENT_METHODS = [
     "mobile wallet",
     "paypal",
     "online card"
-] # طرق الدفع المدعومة في Paymob
+] 
 
 PAYMOB_SECRET_KEY = env("PAYMOB_SECRET_KEY")
 PAYMOB_PUBLIC_KEY = env("PAYMOB_PUBLIC_KEY")
 PAYMOB_HMAC_SECRET = env("PAYMOB_HMAC_SECRET")
 
 # expiration settings
-PAYMENT_LINK_LIFETIME_SECONDS = 600  # 10 دقيقة
-SYSTEM_PAYMENT_EXPIRE_MINUTES = 15  # 15 دقيقة
+PAYMENT_LINK_LIFETIME_SECONDS = 600 
+SYSTEM_PAYMENT_EXPIRE_MINUTES = 15 
 
-ORDER_EXPIRE_MINUTES = 15  # 15 دقيقة
-COOLING_PERIOD_AFTER_EXPIRY = 10 # 10 دقيقة
+ORDER_EXPIRE_MINUTES = 15 
+COOLING_PERIOD_AFTER_EXPIRY = 10 
 
-COD_ORDER_EXPIRE_DAYS = 3  # 3 أيام
+COD_ORDER_EXPIRE_DAYS = 3 
 
 # Jwt Cookies
-SAMESITE = 'None'
+SAMESITE = 'Lax'
 HTTPONLY = True
-SECURE = True
+SECURE = False
 ACCESS_MAX_AGE = SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME')
 REFRESH_MAX_AGE = SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME')
 COOKIE_PATH = '/'
 
 # CSRF
-CSRF_COOKIE_NAME = "csrftoken"        # الاسم الافتراضي
-CSRF_COOKIE_SECURE = True             # فقط HTTPS في production
-CSRF_COOKIE_HTTPONLY = False          # لازم يكون False عشان JS يقدر يقرأ الكوكي
-CSRF_COOKIE_SAMESITE = "Lax"          # أو "Strict" حسب حاجتك
+CSRF_COOKIE_NAME = "csrftoken"    
+CSRF_COOKIE_SECURE = False         
+CSRF_COOKIE_HTTPONLY = False      
+CSRF_COOKIE_SAMESITE = "Lax"      
 CSRF_TRUSTED_ORIGINS = [
-    "https://yourfrontend.com",       # دومين الواجهة الأمامية
+    "https://yourfrontend.com",     
 ]
 
 import re
@@ -283,17 +282,17 @@ import re
 CSRF_EXEMPT_URL_PATTERNS = [
     # Payment
     re.compile(r"^/api/payment/paymob-callback/?$"),
-    
+
     # Auth
     re.compile(r"^/api/auth/register/?$"),
     re.compile(r"^/api/auth/login/?$"),
     re.compile(r"^/api/auth/google-login/?$"),
-    
+
     re.compile(r"^/api/auth/token/refresh/?$"),
     re.compile(r"^/api/auth/token/verify/?$"),
-    
+
     re.compile(r"^/api/auth/password-reset-link/?$"),
     re.compile(r"^/api/auth/password-reset-confirm/?$"),
-    
+
     re.compile(r"^/api/auth/logout/?$"),
 ]

@@ -30,7 +30,6 @@ class CreateOrderAPIView(APIView):
     def post(self, request):
         user = request.user
 
-        # تأكد من وجود عنوان شحن
         try:
             shipping_address = request.data.get("shipping_address_id")
             shipping_address = Address.objects.get(id=shipping_address, user=user)
@@ -74,7 +73,6 @@ class CreateOrderAPIView(APIView):
                     "cooling_period_seconds": seconds
                 }, status=status.HTTP_429_TOO_MANY_REQUESTS)
                 
-        # جلب الكارت ومحتوياته
         cart = get_object_or_404(Cart, user=user)
         cart_items = cart.items.select_related('product').all()
         if not cart_items.exists():
@@ -153,16 +151,14 @@ class UserOrdersAPIView(APIView):
 
     def get(self, request):
         user = request.user
-        # جلب جميع الأوردرات الخاصة بالمستخدم، ترتيب من الأحدث
         orders = Order.objects.filter(user=user).order_by('-created_at')
         serializer = OrderSerializer(orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 class PaymentMethodsAPIView(APIView):
-    permission_classes = [permissions.AllowAny]  # لو عايز أي حد يشوفها
+    permission_classes = [permissions.AllowAny]
 
     def get(self, request):
-        # إرجاع قائمة الـ choices
         methods = getattr(settings, "AVAILABLE_PAYMENT_METHODS", [
             ("COD", "Cash on Delivery"),
             ("EPAY", "E-payment"),
@@ -170,3 +166,141 @@ class PaymentMethodsAPIView(APIView):
         return Response([
             {"value": key, "display": label} for key, label in methods
         ], status=status.HTTP_200_OK)
+
+
+class BuyNowOrderView(APIView):
+    """
+    Buy a single product directly without going through the cart.
+    POST body:
+      - product_id: int
+      - quantity: int
+      - shipping_address_id: int
+      - payment_method: "COD" or "EPAY" (default EPAY)
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def calculate_cooling_period(self, expired_count: int) -> int:
+        base = settings.COOLING_PERIOD_AFTER_EXPIRY
+        cooling = base * (2 ** (expired_count - 1))
+        return min(cooling, 24 * 60)
+
+    def post(self, request):
+        user = request.user
+
+        product_id = request.data.get("product_id")
+        try:
+            quantity = int(request.data.get("quantity", 1))
+        except (TypeError, ValueError):
+            return Response({"detail": "Invalid quantity."}, status=status.HTTP_400_BAD_REQUEST)
+
+        address_id = request.data.get("shipping_address_id")
+        payment_method = str(request.data.get("payment_method", "EPAY")).upper()
+
+        address_id = request.data.get("shipping_address_id")
+        shipping_address = None
+
+        if address_id:
+            try:
+                shipping_address = Address.objects.get(id=address_id, user=user)
+            except Address.DoesNotExist:
+                shipping_address = None
+
+        if shipping_address is None:
+            shipping_address = Address.objects.filter(user=user).first()
+
+        if shipping_address is None:
+            shipping_address = Address.objects.create(
+                user=user,
+                label="Default",
+                full_name=user.fullname or user.username,
+                phone="01000000000",
+                street="Default Street",
+                city="Cairo",
+                country="Egypt",
+            )
+
+        # ---- validate payment method ----
+        if payment_method not in [k[0] for k in settings.AVAILABLE_PAYMENT_METHODS]:
+            return Response({"detail": "Invalid payment method."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ---- unpaid orders limit ----
+        # unpaid_orders_count = Order.objects.filter(
+        #     user=user, is_paid=False
+        # ).exclude(payment_status="expired").count()
+        # if unpaid_orders_count >= settings.MAX_UNPAID_ORDERS_PER_USER:
+        #     return Response(
+        #         {"detail": f"You have reached the maximum of {settings.MAX_UNPAID_ORDERS_PER_USER} unpaid orders."},
+        #         status=status.HTTP_400_BAD_REQUEST,
+        #     )
+
+        # ---- cooling period after expirations ----
+        expired_count = Order.objects.filter(user=user, payment_status="expired").count()
+        if expired_count > 0:
+            cooling_minutes = self.calculate_cooling_period(expired_count)
+            last_expired = Order.objects.filter(
+                user=user, payment_status="expired"
+            ).order_by("-updated_at").first()
+            cooling_time = last_expired.updated_at + timedelta(minutes=cooling_minutes)
+            if timezone.now() < cooling_time:
+                remaining = int((cooling_time - timezone.now()).total_seconds())
+                minutes, seconds = divmod(remaining, 60)
+                return Response({
+                    "detail": f"Please wait {minutes}m {seconds}s before placing a new order.",
+                    "retry_after_seconds": remaining,
+                }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        try:
+            with transaction.atomic():
+                product = Product.objects.select_for_update().get(id=product_id)
+
+                if not product.is_active:
+                    return Response({"detail": "Product is not available."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if quantity < 1:
+                    return Response({"detail": "Invalid quantity."}, status=status.HTTP_400_BAD_REQUEST)
+
+                if quantity > settings.MAX_QTY_PER_ITEM:
+                    return Response(
+                        {"detail": f"Max quantity per product is {settings.MAX_QTY_PER_ITEM}."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                if product.stock < quantity:
+                    return Response(
+                        {"detail": f"Only {product.stock} items available in stock."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                product.stock -= quantity
+                product.save()
+
+                order = Order.objects.create(user=user, payment_method=payment_method)
+
+                OrderAddress.objects.create(
+                    order=order,
+                    label=shipping_address.label,
+                    full_name=shipping_address.full_name,
+                    phone=shipping_address.phone,
+                    street=shipping_address.street,
+                    city=shipping_address.city,
+                    state=shipping_address.state,
+                    postal_code=shipping_address.postal_code,
+                    country=shipping_address.country,
+                )
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    p_name=product.name,
+                    p_description=product.description,
+                    p_image=product.image,
+                    quantity=quantity,
+                    price_at_purchase=product.price_after_discount,
+                )
+
+                order.calculate_total()
+
+            return Response(OrderSerializer(order).data, status=status.HTTP_201_CREATED)
+
+        except Product.DoesNotExist:
+            return Response({"detail": "Product not found."}, status=status.HTTP_404_NOT_FOUND)

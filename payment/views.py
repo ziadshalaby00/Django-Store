@@ -15,7 +15,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 class CreatePaymentView(APIView):
-    permission_classes = [IsAuthenticated]  # يمكن تعديلها حسب الحاجة
+    permission_classes = [IsAuthenticated] 
     """
     Create a payment for an order.
     Handles Paymob (online) or COD (Cash on Delivery).
@@ -30,29 +30,24 @@ class CreatePaymentView(APIView):
             user=request.user
         )
         
-        # إذا الدفع عند الاستلام
         if order.payment_method.lower() == "cod":
-            # تحديث حالة الدفع عند التسليم لاحقًا
             return Response({
                 "message": "Order is Cash on Delivery. No payment object created.",
                 "order_number": order.order_number,
             }, status=status.HTTP_200_OK)
 
-        # التحقق من حالة الدفع
         if order.payment_status == "paid" or order.is_paid:
             return Response({
                 "message": "Order is already paid.",
                 "order_number": order.order_number
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # إذا كانت حالة الدفع "expired"
         elif order.payment_status == "expired":
             return Response({
                 "message": "Payment window expired. You cannot pay this order anymore.",
                 "order_number": order.order_number
             }, status=status.HTTP_400_BAD_REQUEST)
  
-        # التحقق من وجود رابط دفع نشط
         active_payment_exists = order.payments.filter(
             status="pending",
             created_at__gte=timezone.now() - timedelta(seconds=settings.PAYMENT_LINK_LIFETIME_SECONDS)
@@ -74,7 +69,6 @@ class CreatePaymentView(APIView):
 
         if order.payment_method.lower() == "epay":
             
-            # إعداد بيانات Intention API
             paymob_secret_key = settings.PAYMOB_SECRET_KEY
             amount = int(order.total_price) * 100  # Paymob expects amount in cents/piasters
             
@@ -123,7 +117,6 @@ class CreatePaymentView(APIView):
                 "Content-Type": "application/json"
             }
 
-            # إرسال الطلب لـ Paymob Intention API
             response = requests.post(
                 "https://accept.paymob.com/v1/intention/",
                 json=payload,
@@ -140,7 +133,6 @@ class CreatePaymentView(APIView):
             data = response.json()
             
             res_payment_methods = '--'.join([method['name'] for method in data.get('payment_methods', [])])
-            # إنشاء Payment object في النظام
             payment = Payment.objects.create(
                 user=request.user,
                 order=order,

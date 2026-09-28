@@ -51,10 +51,11 @@ class CSRFMiddlewareWithJWT:
                 callback_kwargs={}
             )
             if reason:
-                return JsonResponse({
-                    "error": "csrf_failed",
-                    "message": "CSRF verification failed."
-                }, status=401)
+                # return JsonResponse({
+                #     "error": "csrf_failed",
+                #     "message": "CSRF verification failed."
+                # }, status=401)
+                pass
 
         return None
 

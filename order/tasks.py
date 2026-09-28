@@ -24,16 +24,16 @@ def clean_unpaid_orders():
         is_paid=False,
         created_at__lt=now - timedelta(minutes=settings.ORDER_EXPIRE_MINUTES)
     ).exclude(
-        payments__status="pending"   # استبعد اللي عنده pending
+        payments__status="pending"
     ).exclude(
         payment_status="expired"
     ).distinct()
 
     with transaction.atomic():
         for order in cod_orders:
-            order.set_status("expired") # signal OrderItem يرجع المخزون تلقائيًا
+            order.set_status("expired")
 
         for order in epay_orders:
-            order.set_status("expired") # signal OrderItem يرجع المخزون تلقائيًا
+            order.set_status("expired")
 
     return f"Expired {cod_orders.count()} unpaid COD orders and {epay_orders.count()} unpaid EPAY orders."

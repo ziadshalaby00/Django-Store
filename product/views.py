@@ -40,7 +40,6 @@ class ProductListView(APIView):
         # ---- Check if search exists ----
         search_query = request.query_params.get('search')
         if search_query:
-            # فقط فلترة بالبحث
             queryset = queryset.filter(
                 Q(name__icontains=search_query) |
                 Q(description__icontains=search_query)

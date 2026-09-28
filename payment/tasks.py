@@ -14,7 +14,6 @@ def expire_pending_payments():
     now = timezone.now()
     expiration_time = now - timedelta(minutes=PAYMENT_EXPIRATION_MINUTES)
 
-    # نجيب كل الـ pending payments اللي مر عليهم أكتر من 30 دقيقة
     payments = Payment.objects.filter(
         status="pending",
         created_at__lt=expiration_time

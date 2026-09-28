@@ -13,7 +13,6 @@ class AddressViewSet(viewsets.ModelViewSet):
     pagination_class = None
 
     def get_queryset(self):
-        # يرجع بس عناوين اليوزر الحالي
         return Address.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):

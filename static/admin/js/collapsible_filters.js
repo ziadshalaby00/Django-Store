@@ -6,11 +6,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const filterList = filterSection.querySelector('ul');
         const mainContent = document.querySelector('#content-main');
         
-        // إضافة زر التبديل مع سهم
         const toggleArrow = document.createElement('span');
         heading.appendChild(toggleArrow);
         
-        // إضافة زر منفصل في الزاوية
         const floatingToggle = document.createElement('div');
         floatingToggle.style.position = 'fixed';
         floatingToggle.style.right = '0';
@@ -25,10 +23,8 @@ document.addEventListener('DOMContentLoaded', function() {
         floatingToggle.style.boxShadow = '0 0 10px rgba(0,0,0,0.3)';
         document.body.appendChild(floatingToggle);
         
-        // حالة الطي (false = مفتوح, true = مطوي)
         let isCollapsed = localStorage.getItem('adminFiltersCollapsed') === 'true';
 
-        // وظيفة تحديث العرض بناءً على الحالة
         function updateUI() {
             if (isCollapsed) {
                 filterSection.style.display = 'none';
@@ -41,17 +37,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
 
-        // تطبيق الحالة المحفوظة عند التحميل
         updateUI();
 
-        // وظيفة طي/فتح الـ filters
         function toggleFilters() {
             isCollapsed = !isCollapsed;
             localStorage.setItem('adminFiltersCollapsed', isCollapsed);
             updateUI();
         }
         
-        // إضافة event listeners
         toggleArrow.addEventListener('click', function(e) {
             e.stopPropagation();
             toggleFilters();
@@ -59,7 +52,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         floatingToggle.addEventListener('click', toggleFilters);
         
-        // منع طي الـ filters عند النقر على العناصر داخلها
         filterList.addEventListener('click', function(e) {
             e.stopPropagation();
         });

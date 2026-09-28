@@ -30,7 +30,7 @@ class Order(models.Model):
     
     payment_status = models.CharField(max_length=20, choices=PAID_STATUS, default="unpaid")
     is_paid = models.BooleanField(default=False)
-    paid_at = models.DateTimeField(blank=True, null=True)  # تاريخ الدفع لو اتدفع
+    paid_at = models.DateTimeField(blank=True, null=True)
 
     total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     currency = models.CharField(max_length=3, default="EGP", editable=False)
@@ -43,8 +43,6 @@ class Order(models.Model):
 
     def save(self, *args, **kwargs):
         if not self.order_number:
-            # توليد رقم أوردر بصيغة منظمة
-            # مثال: ORD-20250908-AB12CD
             import datetime
             today = datetime.date.today().strftime("%Y%m%d")
             random_code = uuid.uuid4().hex[:6].upper()
@@ -65,14 +63,12 @@ class Order(models.Model):
         """
         Update order status + handle stock if expired
         """
-        # لو الأوردر بقى expired → رجع المخزون
         if new_status == "expired" and self.payment_status != "expired":
             for item in self.items.all():
                 if item.product:
                     item.product.stock += item.quantity
                     item.product.save()
 
-        # لو الأوردر اتدفع → علمه paid وخزن تاريخ الدفع
         if new_status == "paid":
             self.is_paid = True
             from django.utils import timezone

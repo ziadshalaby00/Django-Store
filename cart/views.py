@@ -42,7 +42,6 @@ class AddToCartView(generics.CreateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # تحقق من المخزون
         if quantity > product.stock:
             return Response(
                 {"detail": f"Only {product.stock} items available in stock."},
@@ -86,7 +85,6 @@ class UpdateCartItemView(generics.UpdateAPIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # تحقق من المخزون
         if quantity > cart_item.product.stock:
             return Response(
                 {"detail": f"Only {cart_item.product.stock} items available in stock."},

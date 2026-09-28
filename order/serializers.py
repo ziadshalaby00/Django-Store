@@ -9,7 +9,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
         fields = ("id", "product", "p_name", 'p_description', 'p_image', "quantity", "price_at_purchase", "subtotal")
 
     def get_subtotal(self, obj):
-        # subtotal مع العملة
         return f"{obj.subtotal} {obj.order.currency}"
 
 class OrderAddressSerializer(serializers.ModelSerializer):

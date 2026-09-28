@@ -24,8 +24,8 @@ class Category(models.Model):
 class Product(models.Model):
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2)  # السعر الأصلي
-    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)  # الخصم %
+    price = models.DecimalField(max_digits=10, decimal_places=2) 
+    discount_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     stock = models.PositiveIntegerField(default=0)
     image = models.ImageField(upload_to='products/', null=True, blank=True)
     
@@ -41,7 +41,6 @@ class Product(models.Model):
 
     @property
     def price_after_discount(self):
-        """السعر بعد تطبيق الخصم النسبي"""
         if self.price is None:
             return None
         if self.discount_percentage is None:

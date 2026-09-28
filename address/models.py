@@ -10,7 +10,7 @@ class Address(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, related_name="addresses")
     label = models.CharField(max_length=100)
     
-    full_name = models.CharField(max_length=100)  # اسم صاحب العنوان
+    full_name = models.CharField(max_length=100)
     phone = models.CharField(max_length=20)
 
     street = models.CharField(max_length=255)
