@@ -59,8 +59,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware", 
     "auth_app.authentication.CSRFMiddlewareWithJWT",
-    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -198,14 +198,17 @@ SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = env("GOOGLE_CLIENT_SECRET")
 
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
+    "https://angular-store.ziadshalaby95.workers.dev",
     "http://localhost:4200",
     "http://127.0.0.1:4200",
     "http://localhost:8000",
+    "https://store.ziadshalaby00.dpdns.org",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
+    "https://store.ziadshalaby00.dpdns.org",
 ]
 
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
@@ -261,20 +264,21 @@ COOLING_PERIOD_AFTER_EXPIRY = 10
 COD_ORDER_EXPIRE_DAYS = 3 
 
 # Jwt Cookies
-SAMESITE = 'Lax'
+SAMESITE = 'None'
 HTTPONLY = True
-SECURE = False
+SECURE = True  
 ACCESS_MAX_AGE = SIMPLE_JWT.get('ACCESS_TOKEN_LIFETIME')
 REFRESH_MAX_AGE = SIMPLE_JWT.get('REFRESH_TOKEN_LIFETIME')
 COOKIE_PATH = '/'
 
 # CSRF
 CSRF_COOKIE_NAME = "csrftoken"    
-CSRF_COOKIE_SECURE = False         
+CSRF_COOKIE_SECURE = True         
 CSRF_COOKIE_HTTPONLY = False      
-CSRF_COOKIE_SAMESITE = "Lax"      
+CSRF_COOKIE_SAMESITE = "None"      
 CSRF_TRUSTED_ORIGINS = [
-    "https://yourfrontend.com",     
+    "https://store.ziadshalaby00.dpdns.org", 
+    "https://angular-store.ziadshalaby95.workers.dev",     
 ]
 
 import re
